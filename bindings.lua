@@ -3,8 +3,10 @@ local bindings = {
     JobBindings = T{
         Default = T{},
         Palettes = T{ Name="Base", Bindings = T{} }
-    }    
+    },
 };
+bindings.ActivePalette = bindings.JobBindings.Palettes[1];
+bindings.ActivePaletteIndex = 1;
 
 local function WriteBinding(writer, depth, hotkey, binding)
     local pad1 = string.rep(' ', depth);
@@ -118,6 +120,8 @@ function exposed:LoadDefaults(name, id, job)
                 Palettes = T{ Name="Base", Bindings = T{} }
             }    
         };
+        bindings.ActivePalette = bindings.JobBindings.Palettes[1];
+        bindings.ActivePaletteIndex = 1;
         ApplyBindings();
         return;
     end
