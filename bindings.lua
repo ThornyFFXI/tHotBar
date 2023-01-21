@@ -2,7 +2,7 @@ local bindings = {
     GlobalBindings = T{},
     JobBindings = T{
         Default = T{},
-        Palettes = T{ Name="Base", Bindings = T{} }
+        Palettes = T{ { Name="Base", Bindings = T{} } }
     },
 };
 bindings.ActivePalette = bindings.JobBindings.Palettes[1];
@@ -86,7 +86,6 @@ local function ApplyBindings()
     end
 
     local output = {};
-    
     for hotkey,binding in pairs(bindings.ActivePalette.Bindings) do
         output[hotkey] = binding;
         binding.Scope = 3;
@@ -117,8 +116,8 @@ function exposed:LoadDefaults(name, id, job)
             GlobalBindings = T{},
             JobBindings = T{
                 Default = T{},
-                Palettes = T{ Name="Base", Bindings = T{} }
-            }    
+                Palettes = T{ { Name="Base", Bindings = T{} } }
+            }
         };
         bindings.ActivePalette = bindings.JobBindings.Palettes[1];
         bindings.ActivePaletteIndex = 1;
@@ -167,7 +166,6 @@ function exposed:LoadDefaults(name, id, job)
 
     bindings.ActivePalette = bindings.JobBindings.Palettes[1];
     bindings.ActivePaletteIndex = 1;
-    
     ApplyBindings();
 end
 

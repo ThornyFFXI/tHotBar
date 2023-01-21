@@ -87,6 +87,12 @@ local defaultSettings = T{
     HideWhileMap = true,
 };
 
+local layoutConfigFolder = string.format('%sconfig/addons/%s/resources/layouts', AshitaCore:GetInstallPath(), addon.name);
+if not ashita.fs.exists(layoutConfigFolder) then
+    ashita.fs.create_directory(layoutConfigFolder);
+end
+
+
 gSettings = settings.load(defaultSettings);
 gInterface:Initialize(gSettings.Layout);
 
