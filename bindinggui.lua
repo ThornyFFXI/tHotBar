@@ -6,9 +6,14 @@ local state = { IsOpen={ false } };
 local Setup = {};
 local Update = {};
 
-local function CheckBox(member)
-    if (imgui.Checkbox(string.format('%s##Binding_%s', member, member), { state.Components[member] })) then
-        state.Components[member] = not state.Components[member];
+local function CheckBox(display, field)
+    local displayName = display;
+    local fieldName = display;
+    if (field ~= nil) then
+        fieldName = field;
+    end
+    if (imgui.Checkbox(string.format('%s##Binding_%s', displayName, displayName), { state.Components[fieldName] })) then
+        state.Components[fieldName] = not state.Components[fieldName];
     end
 end
 
@@ -65,23 +70,27 @@ local function UpdateMacroImage()
         return;
     end
 
-    local paths = T{
-        string.format('%sconfig//addons//%s//resources//%s', AshitaCore:GetInstallPath(), addon.name, state.MacroImage[1]),
-        string.format('%saddons//%s//resources//%s', AshitaCore:GetInstallPath(), addon.name, state.MacroImage[1])
-    };
-
-    for _,path in ipairs(paths) do
-        if ashita.fs.exists(path) then
+    if (string.sub(state.MacroImage[1], 1, 5) == 'ITEM:') then
+        local item = AshitaCore:GetResourceManager():GetItemById(tonumber(string.sub(state.MacroImage[1], 6)));
+        if (item ~= nil) then    
             local dx_texture_ptr = ffi.new('IDirect3DTexture8*[1]');
-            if (ffi.C.D3DXCreateTextureFromFileA(d3d8_device, path, dx_texture_ptr) == ffi.C.S_OK) then
-                 state.Texture = d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', dx_texture_ptr[0]));
-                 break;
+            if (ffi.C.D3DXCreateTextureFromFileInMemoryEx(d3d8_device, item.Bitmap, item.ImageSize, 0xFFFFFFFF, 0xFFFFFFFF, 1, 0, ffi.C.D3DFMT_A8R8G8B8, ffi.C.D3DPOOL_MANAGED, ffi.C.D3DX_DEFAULT, ffi.C.D3DX_DEFAULT, 0xFF000000, nil, nil, dx_texture_ptr) == ffi.C.S_OK) then
+                state.Texture = d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', dx_texture_ptr[0]));
             end
+        end
+        return;
+    end
+
+    local path = GetImagePath(state.MacroImage[1]);
+    if (path ~= nil) then
+        local dx_texture_ptr = ffi.new('IDirect3DTexture8*[1]');
+        if (ffi.C.D3DXCreateTextureFromFileA(d3d8_device, path, dx_texture_ptr) == ffi.C.S_OK) then
+            state.Texture = d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', dx_texture_ptr[0]));
         end
     end
 end
 
-Setup.Ability = function()
+Setup.Ability = function(skipUpdate)
     state.ActionResources = T{};
     local resMgr = AshitaCore:GetResourceManager();
     local playMgr = AshitaCore:GetMemoryManager():GetPlayer();
@@ -102,13 +111,17 @@ Setup.Ability = function()
     end
 
     state.Indices.Action = 1;
-    Update.Action(state.Combos.Action[1]);
+    if not skipUpdate then
+        Update.Action(state.Combos.Action[1]);
+    end
 end
 
-Setup.Command = function()
+Setup.Command = function(skipUpdate)
     state.Combos.Action = T{};
     state.Indices.Action = 0;
-    Update.Command();
+    if not skipUpdate then
+        Update.Command();
+    end
 end
 
 Setup.Empty = function()
@@ -117,35 +130,33 @@ Setup.Empty = function()
     Update.Empty();
 end
 
-Setup.Item = function()
+Setup.Item = function(skipUpdate)
     state.ActionResources = T{};
     
     local resMgr = AshitaCore:GetResourceManager();
-    local invMgr = AshitaCore:GetMemoryManager():GetInventory();
     local bags = T{0, 3};
     for _,bag in ipairs(bags) do
-        local max = invMgr:GetContainerCountMax(bag);
-        for i = 1,max do
-            local item = invMgr:GetContainerItem(bag, i);
-            if (item.Id ~= 0) and (item.Count ~= 0) then
+        for i = 1,80 do
+            local item = gInventory:GetItemTable(bag, i);
+            if (item ~= nil) then
                 local res = resMgr:GetItemById(item.Id);
                 if (bit.band(res.Flags, 0x200) == 0x200) then
-                    state.ActionResources:append(res);
+                    if (not state.ActionResources:contains(res)) then
+                        state.ActionResources:append(res);
+                    end
                 end
             end
         end
     end
 
-    for i = 0,15 do
-        local equippedItem = invMgr:GetEquippedItem(i);
-        if (equippedItem ~= nil) then
-            local index = bit.band(equippedItem.Index, 0xFF);
-            if (index ~= 0) then
-                local container = bit.rshift(bit.band(equippedItem.Index, 0xFF00), 8);
-                local item = invMgr:GetContainerItem(container, index);
-                if (item.Id ~= 0) and (item.Count ~= 0) then
-                    local res = resMgr:GetItemById(item.Id);
-                    if (bit.band(res.Flags, 0x400) == 0x400) then
+    bags = T{ 0, 8, 10, 11, 12, 13, 14, 15, 16 };
+    for _,bag in ipairs(bags) do
+        for i = 1,80 do
+            local item = gInventory:GetItemTable(bag, i);
+            if (item ~= nil) then
+                local res = resMgr:GetItemById(item.Id);
+                if (bit.band(res.Flags, 0x400) == 0x400) then
+                    if (not state.ActionResources:contains(res)) then
                         state.ActionResources:append(res);
                     end
                 end
@@ -172,11 +183,13 @@ Setup.Item = function()
         end
     end
 
-    state.Indices.Action = 1;
-    Update.Action(state.Combos.Action[1]);
+    if not skipUpdate then
+        state.Indices.Action = 1;
+        Update.Action(state.Combos.Action[1]);
+    end
 end
 
-Setup.Spell = function()
+Setup.Spell = function(skipUpdate)
     state.ActionResources = T{};
     local resMgr = AshitaCore:GetResourceManager();
     local playMgr = AshitaCore:GetMemoryManager():GetPlayer();
@@ -223,11 +236,13 @@ Setup.Spell = function()
         state.Combos.Action:append(res.Name[1]);
     end
 
-    state.Indices.Action = 1;
-    Update.Action(state.Combos.Action[1]);
+    if (not skipUpdate) then
+        state.Indices.Action = 1;
+        Update.Action(state.Combos.Action[1]);
+    end
 end
 
-Setup.Trust = function()
+Setup.Trust = function(skipUpdate)
     state.ActionResources = T{};
     local resMgr = AshitaCore:GetResourceManager();
     local playMgr = AshitaCore:GetMemoryManager():GetPlayer();
@@ -275,11 +290,13 @@ Setup.Trust = function()
         state.Combos.Action:append(res.Name[1]);
     end
 
-    state.Indices.Action = 1;
-    Update.Action(state.Combos.Action[1]);
+    if (not skipUpdate) then
+        state.Indices.Action = 1;
+        Update.Action(state.Combos.Action[1]);
+    end
 end
 
-Setup.Weaponskill = function()
+Setup.Weaponskill = function(skipUpdate)
     state.ActionResources = T{};
     local resMgr = AshitaCore:GetResourceManager();
     local playMgr = AshitaCore:GetMemoryManager():GetPlayer();
@@ -299,8 +316,10 @@ Setup.Weaponskill = function()
         state.Combos.Action:append(res.Name[1]);
     end
 
-    state.Indices.Action = 1;
-    Update.Action(state.Combos.Action[1]);
+    if (not skipUpdate) then
+        state.Indices.Action = 1;
+        Update.Action(state.Combos.Action[1]);
+    end
 end
 
 Update.Type = function(newValue)
@@ -325,6 +344,7 @@ Update.Ability = function(index)
     end
     state.MacroLabel = { res.Name[1] };
     state.MacroImage = { string.format('abilities/%u.png', res.Id - 0x200) };
+    state.CostOverride = { '' };
     UpdateMacroImage();
 end
 
@@ -332,6 +352,7 @@ Update.Command = function(index)
     state.MacroText = { '/attack <t>' };
     state.MacroLabel = { 'Attack' };
     state.MacroImage = { 'misc/command.png' };
+    state.CostOverride = { '' };
     UpdateMacroImage();
 end
 
@@ -339,6 +360,7 @@ Update.Empty = function(index)
     state.MacroText = nil;
     state.MacroLabel = nil;
     state.MacroImage = { 'misc/empty.png' };
+    state.CostOverride = nil;
     UpdateMacroImage();
 end
 
@@ -351,12 +373,11 @@ Update.Item = function(index)
     end
     state.MacroLabel = { res.Name[1] };
     state.MacroImage = { string.format('ITEM:%u', res.Id) };
+    state.CostOverride = nil;
     UpdateMacroImage();
 end
 
 Update.Spell = function(index)
-    print(index);
-    print(#state.ActionResources);
     local res = state.ActionResources[index];
     if (res.Targets == 1) then
         state.MacroText = { string.format('/ma \"%s\" <me>', res.Name[1]) };
@@ -365,6 +386,7 @@ Update.Spell = function(index)
     end
     state.MacroLabel = { res.Name[1] };
     state.MacroImage = { string.format('spells/%u.png', res.Index) };
+    state.CostOverride = { '' };
     UpdateMacroImage();
 end
 
@@ -377,6 +399,7 @@ Update.Trust = function(index)
     end
     state.MacroLabel = { res.Name[1] };
     state.MacroImage = { string.format('spells/%u.png', res.Index) };
+    state.CostOverride = { '' };
     UpdateMacroImage();
 end
 
@@ -389,7 +412,18 @@ Update.Weaponskill = function(index)
     end
     state.MacroLabel = { res.Name[1] };
     state.MacroImage = { string.format('weaponskills/%u.png', res.Id) };
+    state.CostOverride = { '' };
     UpdateMacroImage();
+end
+
+local function GetBindResource()
+    local type = state.Combos.Type[state.Indices.Type];
+    if T{'Ability', 'Item', 'Spell', 'Trust', 'Weaponskill'}:contains(type) then
+        local res = state.ActionResources[state.Indices.Action];
+        return res;
+    else
+        return true;
+    end
 end
 
 local exposed = {};
@@ -398,11 +432,11 @@ function exposed:Render()
     if (state.IsOpen[1]) then
         if (imgui.Begin(string.format('%s v%s Binding', addon.name, addon.version), state.IsOpen, ImGuiWindowFlags_AlwaysAutoResize)) then
             imgui.BeginGroup();
-            if imgui.BeginTabBar('##TabBar', ImGuiTabBarFlags_NoCloseWIthMiddleMouseButton) then
+            if imgui.BeginTabBar('##TabBar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
                 if imgui.BeginTabItem('Binding##BindingTab', nil) then
-                    imgui.BeginChild('BindingChild', { 253, 345 }, true);
+                    imgui.BeginChild('BindingChild', { 253, 355 }, true);
                     imgui.TextColored(header, 'Hotkey');
-                    imgui.Text('^1');
+                    imgui.Text(state.Hotkey);
                     ComboBox('Scope', 'Scope');
                     imgui.ShowHelp('Determines how wide the binding will apply.  Job binds are used to fill empty slots in palette binds, then global binds are used to fill any remaining empty slots.');
                     ComboBox('Action Type', 'Type');
@@ -413,10 +447,10 @@ function exposed:Render()
                         imgui.Text('N/A');
                     end
                     imgui.TextColored(header, 'Macro');
-                    if (state.MacroText == nil) then
-                        imgui.Text('N/A');
-                    else
+                    if (state.MacroText ~= nil) then
                         imgui.InputTextMultiline('##MacroText', state.MacroText, 4096, { 237, 116  });
+                    else
+                        imgui.Text('N/A');
                     end
                     imgui.TextColored(header, 'Label');
                     if (state.MacroLabel ~= nil) then
@@ -435,7 +469,7 @@ function exposed:Render()
                         width = layout.ImageObjects.Icon.Width;
                         height = layout.ImageObjects.Icon.Height;
                     end
-                    imgui.BeginChild('AppearanceChild', { 253, 165 + height }, true);
+                    imgui.BeginChild('AppearanceChild', { 253, 210 + height }, true);
                     imgui.TextColored(header, 'Image');
                     imgui.ShowHelp('While the image file and size are correct, rendering here is done with ImGui instead of GdiPlus and may vary slightly in appearance.');
                     local posY = imgui.GetCursorPosY();
@@ -459,7 +493,7 @@ function exposed:Render()
                     CheckBox('Fade');
                     imgui.ShowHelp('Fades the icon for actions where cooldown is not 0 or cost is not met.');
                     CheckBox('Recast');
-                    imgui.ShowHelp('Shows action recast timers.');                
+                    imgui.ShowHelp('Shows action recast timers.');
                     imgui.EndGroup();
                     imgui.SameLine();
                     imgui.BeginGroup();
@@ -467,11 +501,18 @@ function exposed:Render()
                     imgui.ShowHelp('Shows action names.');
                     CheckBox('Trigger');
                     imgui.ShowHelp('Shows an overlay when you activate an action.');
-                    CheckBox('SC Icon');
+                    CheckBox('SC Icon', 'SkillchainIcon');
                     imgui.ShowHelp('Overrides weaponskill icons when a skillchain would be formed.');
-                    CheckBox('SC Animation');
+                    CheckBox('SC Animation', 'SkillchainAnimation');
                     imgui.ShowHelp('Animates a border around weaponskill icons when a skillchain would be formed.');
                     imgui.EndGroup();
+                    imgui.TextColored(header, 'Cost Override');
+                    imgui.ShowHelp('Entering an item ID, or multiple item IDs seperated by commas, will make cost display as the total amount of those items in your inventory and wardrobes(if equippable) or temporary items(if not).  This can be useful for actions like Call Beast or Reward that use an item, but not always the same item.  Actions like angon and ninjutsu with fixed items are automatically handled without specifying this.');
+                    if (state.CostOverride ~= nil) then
+                        imgui.InputText('##MacroCostOverride', state.CostOverride, 256);
+                    else
+                        imgui.Text('N/A');
+                    end
                     imgui.EndChild();
                     imgui.EndTabItem();
                 end
@@ -482,19 +523,135 @@ function exposed:Render()
             if imgui.Button('Cancel', { 60, 0 }) then
                 state.IsOpen[1] = false;
             end
-            imgui.SameLine();
-            imgui.SetCursorPos( { 202, imgui.GetCursorPosY() });
-            if imgui.Button('Bind', { 60, 0 }) then
-                
+            local bindResource = GetBindResource();
+            if (bindResource ~= nil) then
+                imgui.SameLine();
+                imgui.SetCursorPos( { 202, imgui.GetCursorPosY() });
+                if imgui.Button('Bind', { 60, 0 }) then
+                    if (state.Combos.Type[state.Indices.Type] == 'Empty') then
+                        if (state.Indices.Scope == 1) then
+                            gBindings:BindGlobal(state.Hotkey, nil);
+                        elseif (state.Indices.Scope == 2) then
+                            gBindings:BindJob(state.Hotkey, nil);
+                        elseif (state.Indices.Scope == 3) then
+                            gBindings:BindPalette(state.Hotkey, nil);
+                        else
+                            return;
+                        end
+                        state = { IsOpen={ false } };
+                        return;
+                    end
+
+                    local binding = {};
+                    binding.ActionType = state.Combos.Type[state.Indices.Type];
+                    if T{'Ability', 'Item', 'Spell', 'Trust', 'Weaponskill'}:contains(binding.ActionType) then
+                        if (binding.ActionType == 'Spell') or (binding.ActionType == 'Trust') then
+                            binding.Id = bindResource.Index;
+                        else
+                            binding.Id = bindResource.Id;
+                        end
+                    end
+                    if ((state.CostOverride ~= nil) and (state.CostOverride[1] ~= '')) then
+                        local ids = T{};
+                        local compString = string.gsub(state.CostOverride[1], ' ', '');
+                        if (string.find(compString, ',')) then
+                            for entry in string.gmatch(compString, '([^,]+)') do
+                                local id = tonumber(entry);
+                                if type(id) == 'number' then
+                                    local res = AshitaCore:GetResourceManager():GetItemById(id);
+                                    if (res ~= nil) and (string.len(res.Name[1]) > 0) then
+                                        ids:append(id);
+                                    end
+                                end
+                            end
+                        else
+                            local id = tonumber(compString);
+                            if type(id) == 'number' then
+                                local res = AshitaCore:GetResourceManager():GetItemById(id);
+                                if (res ~= nil) and (string.len(res.Name[1]) > 0) then
+                                    ids:append(id);
+                                end
+                            end
+                        end
+                        if (#ids > 0) then
+                            binding.CostOverride = ids;
+                        end
+                    end
+                    if (state.MacroLabel == nil) then
+                        binding.Label = '';
+                    else
+                        binding.Label = state.MacroLabel[1];
+                    end
+                    if (state.MacroText == nil) then
+                        binding.Macro = T{};
+                    else
+                        binding.Macro = T{};
+                        for line in string.gmatch(state.MacroText[1], "[^\r\n]+") do
+                            binding.Macro:append(line);
+                        end
+                    end
+                    binding.Image = state.MacroImage[1];
+                    binding.ShowCost = state.Components.Cost;
+                    binding.ShowCross = state.Components.Cross;
+                    binding.ShowFade = state.Components.Fade;
+                    binding.ShowRecast = state.Components.Recast;
+                    binding.ShowName = state.Components.Name;
+                    binding.ShowTrigger = state.Components.Trigger;
+                    binding.ShowSkillchainIcon = state.Components.SkillchainIcon;
+                    binding.ShowSkillchainAnimation = state.Components.SkillchainAnimation;
+                    if (state.Indices.Scope == 1) then
+                        gBindings:BindGlobal(state.Hotkey, binding);
+                    elseif (state.Indices.Scope == 2) then
+                        gBindings:BindJob(state.Hotkey, binding);
+                    elseif (state.Indices.Scope == 3) then
+                        gBindings:BindPalette(state.Hotkey, binding);
+                    else
+                        return;
+                    end
+                    state = { IsOpen={ false } };
+                end
             end
             imgui.End();
         end
     end
 end
 
-function exposed:Show()
+function exposed:Show(hotkey, binding)
+    if (binding == nil) then
+        state = {
+            IsOpen = { true },
+            Hotkey = hotkey;
+            ActionResources = T{},
+            Combos = {
+                ['Scope'] = T{ 'Global', 'Job', 'Palette' },
+                ['Type'] = T{ 'Ability', 'Command', 'Empty', 'Item', 'Spell', 'Trust', 'Weaponskill' },
+                ['Action'] = T{ },
+            },
+            Components = {
+                Cost = true,
+                Cross = true,
+                Fade = true,
+                Recast = true,
+                Name = true,
+                Trigger = true,
+                SkillchainIcon = true,
+                SkillchainAnimation = true,
+            },
+            Indices = {
+                ['Scope'] = 3,
+                ['Type'] = 1,
+            },
+            CostOverride = { '' },
+            MacroText = { '' },
+            MacroLabel = { '' },
+        };
+        Setup.Ability();
+        return;
+    end
+
     state = {
         IsOpen = { true },
+        Hotkey = hotkey,
         ActionResources = T{},
         Combos = {
             ['Scope'] = T{ 'Global', 'Job', 'Palette' },
@@ -502,23 +659,131 @@ function exposed:Show()
             ['Action'] = T{ },
         },
         Components = {
-            Cost = true,
-            Cross = true,
-            Fade = true,
-            Recast = true,
-            Name = true,
-            Trigger = true,
-            ['SC Icon'] = true,
-            ['SC Animation'] = true,
+            Cost = binding.ShowCost,
+            Cross = binding.ShowCross,
+            Fade = binding.ShowFade,
+            Recast = binding.ShowRecast,
+            Name = binding.ShowName,
+            Trigger = binding.ShowTrigger,
+            SkillchainIcon = binding.ShowSkillchainIcon,
+            SkillchainAnimation = binding.ShowSkillchainAnimation
         },
         Indices = {
-            ['Scope'] = 3,
-            ['Type'] = 1,
+            ['Scope'] = binding.Scope
         },
+        CostOverride = { '' },
         MacroText = { '' },
-        MacroLabel = { '' },
+        MacroLabel = { binding.Label },
+        MacroImage = { binding.Image }
     };
-    Setup.Ability();
+    UpdateMacroImage();
+    
+    for index,entry in ipairs(state.Combos.Type) do
+        if (entry == binding.ActionType) then
+            state.Indices.Type = index;
+            Setup[entry](true);
+        end
+    end
+
+    if (binding.ActionType == 'Ability') or (binding.ActionType == 'Weaponskill') then
+        local res = AshitaCore:GetResourceManager():GetAbilityById(binding.Id);
+
+        if not state.ActionResources:contains(res) then
+            state.ActionResources:append(res);
+            
+            table.sort(state.ActionResources, function(a,b)
+                return a.Name[1] < b.Name[1];
+            end);
+
+            state.Combos.Action = T{};
+            for _,res in ipairs(state.ActionResources) do
+                state.Combos.Action:append(res.Name[1]);
+            end
+        end
+        
+        for index,match in ipairs(state.ActionResources) do
+            if (match == res) then
+                state.Indices.Action = index;
+                break;
+            end
+        end
+    elseif (binding.ActionType == 'Spell') or (binding.ActionType == 'Trust') then
+        local res = AshitaCore:GetResourceManager():GetSpellById(binding.Id);
+
+        if not state.ActionResources:contains(res) then
+            state.ActionResources:append(res);
+            
+            table.sort(state.ActionResources, function(a,b)
+                return a.Name[1] < b.Name[1];
+            end);
+
+            state.Combos.Action = T{};
+            for _,res in ipairs(state.ActionResources) do
+                state.Combos.Action:append(res.Name[1]);
+            end
+        end
+        
+        for index,match in ipairs(state.ActionResources) do
+            if (match == res) then
+                state.Indices.Action = index;
+                break;
+            end
+        end
+    elseif (binding.ActionType == 'Item') then
+        local res = AshitaCore:GetResourceManager():GetItemById(binding.Id);
+
+        if not state.ActionResources:contains(res) then
+            state.ActionResources:append(res);
+            
+            table.sort(state.ActionResources, function(a,b)
+                return a.Name[1] < b.Name[1];
+            end);
+
+            state.Combos.Action = T{};
+            for index,res in ipairs(state.ActionResources) do
+                local prev = state.ActionResources[index - 1];
+                local next = state.ActionResources[index + 1];
+        
+                --Show item id if multiple matching items..
+                if (prev) and (prev.Name[1] == res.Name[1]) then
+                    state.Combos.Action:append(string.format('%s[%u]', res.Name[1], res.Id));            
+                elseif (next) and (next.Name[1] == res.Name[1]) then
+                    state.Combos.Action:append(string.format('%s[%u]', res.Name[1], res.Id));
+                else
+                    state.Combos.Action:append(res.Name[1]);
+                end
+            end
+        end
+        
+        for index,match in ipairs(state.ActionResources) do
+            if (match == res) then
+                state.Indices.Action = index;
+                break;
+            end
+        end
+    end
+
+    if (type(binding.CostOverride) == 'table') then
+        local output = '';
+        for _,item in ipairs(binding.CostOverride) do
+            if (output ~= '') then
+                output = output .. ',';
+            end
+            output = output .. tostring(item);
+        end
+        state.MacroText = { output };
+    end
+
+    if (type(binding.Macro) == 'table') then
+        local output = '';
+        for _,line in ipairs(binding.Macro) do
+            if (output ~= '') then
+                output = output .. '\n';
+            end
+            output = output .. line;
+        end
+        state.MacroText = { output };
+    end
 end
 
 return exposed;

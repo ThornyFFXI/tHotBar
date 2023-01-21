@@ -126,12 +126,28 @@ local theme = {
     IconFadeAlpha = 0.5,
 
     --[[
-        Path to frame image.
+        Path to images..
         First checks absolute path.
-        Next checks: ashita/config/addons/squareskb/resources/
-        Finally checks: ashita/addons/squareskb/resources/
+        Next checks: ashita/config/addons/addonname/resources/
+        Finally checks: ashita/addons/addonname/resources/
     ]]--
     FramePath = 'misc/frame.png',
+    CrossPath = 'misc/cross.png',
+    TriggerPath = 'misc/trigger.png',
+
+    --This is checked the same way, and can contain any amount of frames.  Frames cycle back to first after last is completed.
+    SkillchainAnimationPaths = T{
+        'misc/crawl1.png',
+        'misc/crawl2.png',
+        'misc/crawl3.png',
+        'misc/crawl4.png',
+        'misc/crawl5.png',
+        'misc/crawl6.png',
+        'misc/crawl7.png'
+    },
+
+    --Time, in seconds, to wait between advancing frames of skillchain animation.
+    SkillchainAnimationTime = 0.08,
 
     --Height of the full graphics object used to render all squares.  All squares *MUST* fully fit within this panel.
     PanelHeight = 179,

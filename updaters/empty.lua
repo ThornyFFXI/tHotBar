@@ -14,14 +14,12 @@ function Updater:Initialize(square, binding)
 
     self.StructPointer.Fade = 0;
     self.StructPointer.Cost = '';
-    if (binding == nil) then
-        self.StructPointer.Macro = square.DefaultMacro;
-    else
-        self.StructPointer.Macro = binding.MacroText;
-    end
+    self.StructPointer.Hotkey = square.Hotkey;
     self.StructPointer.Name = '';
     self.StructPointer.Recast = '';
-    self.StructPointer.OverlayImage = '';
+    self.StructPointer.OverlayImage1 = '';
+    self.StructPointer.OverlayImage2 = '';
+    self.StructPointer.OverlayImage3 = '';
     self.StructPointer.IconImage = '';
 end
 

@@ -26,7 +26,7 @@ local function GetLayouts()
     state.Layouts = layouts;
     state.SelectedLayout = -1;
     for index,layout in ipairs(state.Layouts) do
-        if (gSettings.layout == layout) then
+        if (gSettings.Layout == layout) then
             state.SelectedLayout = index;
         end
     end
@@ -43,7 +43,6 @@ local exposed = {};
 
 function exposed:Render()
     if (state.IsOpen[1]) then
-        imgui.SetNextWindowContentSize({ 253, 200 });
         if (imgui.Begin(string.format('%s v%s Configuration', addon.name, addon.version), state.IsOpen, ImGuiWindowFlags_AlwaysAutoResize)) then
             imgui.TextColored(header, 'Layout');
             if (imgui.BeginCombo('', state.Layouts[state.SelectedLayout], ImGuiComboFlags_None)) then
@@ -62,88 +61,43 @@ function exposed:Render()
             if (imgui.Button('Apply')) then
                 local layout = state.Layouts[state.SelectedLayout];
                 if (layout == nil) then
-                    if (state.IsOpen[1]) then
-                        imgui.SetNextWindowContentSize({ 253, 200 });
-                        if (imgui.Begin(string.format('%s v%s Configuration', addon.name, addon.version), state.IsOpen, ImGuiWindowFlags_AlwaysAutoResize)) then
-                            imgui.TextColored(header, 'Layout');
-                            if (imgui.BeginCombo('', state.Layouts[state.SelectedLayout], ImGuiComboFlags_None)) then
-                                for index,layout in ipairs(state.Layouts) do
-                                    if (imgui.Selectable(layout, index == state.SelectedLayout)) then
-                                        state.SelectedLayout = index;
-                                    end
-                                end
-                                imgui.EndCombo();
-                            end
-                            if (imgui.Button('Refresh')) then
-                                GetLayouts();
-                            end
-                            imgui.ShowHelp('Reloads available layouts from disk.', true);
-                            imgui.SameLine();
-                            if (imgui.Button('Apply')) then
-                                local layout = state.Layouts[state.SelectedLayout];
-                                if (layout == nil) then
-                                    print(chat.header(addon.name) .. chat.error('You must select a valid layout to apply it.'));
-                                else
-                                    gInterface:Initialize(layout);
-                                end
-                            end
-                            imgui.ShowHelp('Applies the selected layout to your display.', true);
-                            imgui.Text('');
-                            imgui.TextColored(header, 'Components');
-                            imgui.BeginGroup();
-                            CheckBox('Cost', 'enableCost');
-                            imgui.ShowHelp('Display action cost indicators.');
-                            CheckBox('Cross', 'enableCross');
-                            imgui.ShowHelp('Displays a X over actions you don\'t currently know.');
-                            CheckBox('Fade', 'enableFade');
-                            imgui.ShowHelp('Fades the icon for actions where cooldown is not 0 or cost is not met.');
-                            CheckBox('Recast', 'enableRecast');
-                            imgui.ShowHelp('Shows action recast timers.');                
-                            imgui.EndGroup();
-                            imgui.SameLine();
-                            imgui.BeginGroup();
-                            CheckBox('Name', 'enableName');
-                            imgui.ShowHelp('Shows action names.');
-                            CheckBox('Trigger', 'enableTrigger');
-                            imgui.ShowHelp('Shows an overlay when you activate an action.');
-                            CheckBox('SC Icon', 'enableSkillchainIcon');
-                            imgui.ShowHelp('Overrides weaponskill icons when a skillchain would be formed.');
-                            CheckBox('SC Animation', 'enableSkillchainAnimation');
-                            imgui.ShowHelp('Animates a border around weaponskill icons when a skillchain would be formed.');
-                            imgui.EndGroup();
-                            imgui.End();
-                        end
-                    end
                     print(chat.header(addon.name) .. chat.error('You must select a valid layout to apply it.'));
                 else
                     gInterface:Initialize(layout);
                 end
             end
             imgui.ShowHelp('Applies the selected layout to your display.', true);
-            imgui.Text('');
+            CheckBox('Clickable', 'ClickToActivate');
+            imgui.ShowHelp('Makes macros activate when their icon is left clicked.');
             imgui.TextColored(header, 'Components');
             imgui.BeginGroup();
-            CheckBox('Cost', 'enableCost');
+            CheckBox('Cost', 'ShowCost');
             imgui.ShowHelp('Display action cost indicators.');
-            CheckBox('Cross', 'enableCross');
+            CheckBox('Cross', 'ShowCross');
             imgui.ShowHelp('Displays a X over actions you don\'t currently know.');
-            CheckBox('Fade', 'enableFade');
+            CheckBox('Fade', 'ShowFade');
             imgui.ShowHelp('Fades the icon for actions where cooldown is not 0 or cost is not met.');
-            CheckBox('Recast', 'enableRecast');
+            CheckBox('Recast', 'ShowRecast');
             imgui.ShowHelp('Shows action recast timers.');                
             imgui.EndGroup();
             imgui.SameLine();
             imgui.BeginGroup();
-            CheckBox('Name', 'enableName');
+            CheckBox('Name', 'ShowName');
             imgui.ShowHelp('Shows action names.');
-            CheckBox('Trigger', 'enableTrigger');
+            CheckBox('Trigger', 'ShowTrigger');
             imgui.ShowHelp('Shows an overlay when you activate an action.');
-            CheckBox('SC Icon', 'enableSkillchainIcon');
+            CheckBox('SC Icon', 'ShowSkillchainIcon');
             imgui.ShowHelp('Overrides weaponskill icons when a skillchain would be formed.');
-            CheckBox('SC Animation', 'enableSkillchainAnimation');
+            CheckBox('SC Animation', 'ShowSkillchainAnimation');
             imgui.ShowHelp('Animates a border around weaponskill icons when a skillchain would be formed.');                
             imgui.EndGroup();
-            imgui.SameLine();
+            imgui.TextColored(header, 'Hide UI');
+            CheckBox('While Zoning', 'HideWhileZoning');
+            imgui.ShowHelp('Hides UI while you are zoning or on title screen.');
+            CheckBox('During Cutscenes', 'HideWhileCutscene');
+            imgui.ShowHelp('Hides UI while the game event system is active.');
+            CheckBox('While Map Open', 'HideWhileMap');
+            imgui.ShowHelp('Hides UI while the map is the topmost menu.');
             imgui.End();
         end
     end

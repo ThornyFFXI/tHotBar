@@ -1,9 +1,12 @@
 local playerData = {
+    Abilities = T{},
+    Spells = T{},
     Id = 0,
     Name = 'Unknown',
     MeritCount = {},
     JobPoints = {},
-    JobPointInit = { Categories = false, Totals = false, Timer = os.clock() + 3 }
+    JobPointInit = { Categories = false, Totals = false, Timer = os.clock() + 3 },
+    LoggedIn = false,
 };
 
 --Initialize name/id/merits if ingame
@@ -12,8 +15,20 @@ if playerIndex ~= 0 then
     local entity = AshitaCore:GetMemoryManager():GetEntity();
     local flags = entity:GetRenderFlags0(playerIndex);
     if (bit.band(flags, 0x200) == 0x200) and (bit.band(flags, 0x4000) == 0) then
+        playerData.LoggedIn = true;
         playerData.Name = entity:GetName(playerIndex);
         playerData.Id = entity:GetServerId(playerIndex);
+        playerData.Job = {
+            MainJob = AshitaCore:GetMemoryManager():GetPlayer():GetMainJob(),
+            MainJobLevel = AshitaCore:GetMemoryManager():GetPlayer():GetMainJobLevel(),
+            SubJob = AshitaCore:GetMemoryManager():GetPlayer():GetSubJob(),
+            SubJobLevel = AshitaCore:GetMemoryManager():GetPlayer():GetSubJobLevel(),
+        };
+        
+        if (playerData.Job.MainJob > 0) and (playerData.Id ~= 0) then
+            gBindings:LoadDefaults(playerData.Name, playerData.Id, playerData.Job.MainJob);
+        end
+
         local pInventory = AshitaCore:GetPointerManager():Get('inventory');
         if (pInventory > 0) then
             local ptr = ashita.memory.read_uint32(pInventory);
@@ -34,6 +49,11 @@ if playerIndex ~= 0 then
                 end
             end
         end
+
+        for i = 1,1024 do
+            playerData.Abilities[i] = AshitaCore:GetMemoryManager():GetPlayer():HasAbility(i);
+            playerData.Spells[i] = AshitaCore:GetMemoryManager():GetPlayer():HasSpell(i);
+        end
     end
 end
 
@@ -41,6 +61,8 @@ ashita.events.register('packet_in', 'player_tracker_handleincomingpacket', funct
     if (e.id == 0x00A) then
         local id = struct.unpack('L', e.data, 0x04 + 1);
         local name = struct.unpack('c16', e.data, 0x84 + 1);
+        local job = struct.unpack('B', e.data, 0xB4 + 1);
+        local sub = struct.unpack('B', e.data, 0xB7 + 1);
         local i,j = string.find(name, '\0');
         if (i ~= nil) then
             name = string.sub(name, 1, i - 1);
@@ -48,13 +70,49 @@ ashita.events.register('packet_in', 'player_tracker_handleincomingpacket', funct
 
         if (id ~= playerData.Id) or (name ~= playerData.Name) then
             playerData = {
-                Id = 0,
-                Name = 'Unknown',
+                Abilities = T{},
+                Spells = T{},
+                Id = id,
+                Name = name,
                 MeritCount = {},
+                Job = {
+                    MainJob = job,
+                    MainJobLevel = 0,
+                    SubJob = sub,
+                    SubJobLevel = 0
+                },
                 JobPoints = {},
                 JobPointInit = { Categories = false, Totals = false, Timer = os.clock() + 3 }
             };
+            gBindings:LoadDefaults(playerData.Name, playerData.Id, playerData.Job.MainJob);
+        elseif (job ~= playerData.Job.MainJob) or (sub ~= playerData.Job.SubJob) then
+            playerData.Job.MainJob = job;
+            playerData.Job.SubJob = sub;
+            gBindings:LoadDefaults(playerData.Name, playerData.Id, playerData.Job.MainJob);
         end
+        playerData.LoggedIn = true;
+    elseif (e.id == 0x00B) then
+        playerData.LoggedIn = false;
+    elseif (e.id == 0x01B) then
+        local job = struct.unpack('B', e.data, 0x08 + 1);
+        local sub = struct.unpack('B', e.data, 0x0B + 1);
+        if ((job ~= playerData.Job.MainJob) or (sub ~= playerData.Job.SubJob)) and (playerData.Id ~= 0) then
+            playerData.Job.MainJob = job;
+            playerData.Job.SubJob = sub;
+            gBindings:LoadDefaults(playerData.Name, playerData.Id, playerData.Job.MainJob);
+        end
+    elseif (e.id == 0x061) then
+        local job = struct.unpack('B', e.data, 0x0C + 1);
+        local mainLevel = struct.unpack('B', e.data, 0x0D + 1);
+        local sub = struct.unpack('B', e.data, 0x0E + 1);
+        local subLevel = struct.unpack('B', e.data, 0x0F + 1);
+        if ((job ~= playerData.Job.MainJob) or (sub ~= playerData.Job.SubJob)) and (playerData.Id ~= 0) then
+            playerData.Job.MainJob = job;
+            playerData.Job.SubJob = sub;
+            gBindings:LoadDefaults(playerData.Name, playerData.Id, playerData.Job.MainJob);
+        end
+        playerData.Job.MainJobLevel = mainLevel;
+        playerData.Job.SubJobLevel = subLevel;
     elseif (e.id == 0x63) then
         if struct.unpack('B', e.data, 0x04 + 1) == 5 then
             for i = 1,22,1 do
@@ -64,6 +122,14 @@ ashita.events.register('packet_in', 'player_tracker_handleincomingpacket', funct
                 playerData.JobPoints[i].Total = struct.unpack('H', e.data, 0x0C + 0x04 + (6 * i) + 1);
             end
             playerData.JobPointInit.Totals = true;
+        end
+    elseif (e.id == 0x0AA) then
+        for i = 1,1024 do
+            playerData.Spells[i] = (ashita.bits.unpack_be(e.data_raw, 4, i, 1) == 1);
+        end
+    elseif (e.id == 0x0AC) then
+        for i = 1,1024 do
+            playerData.Abilities[i] = (ashita.bits.unpack_be(e.data_raw, 4, i, 1) == 1);
         end
     elseif (e.id == 0x08C) then
         local meritNum = struct.unpack('B', e.data, 0x04 + 1);
@@ -124,6 +190,10 @@ function accessor:GetMeritCount(meritId)
     end
 end
 
+function accessor:GetJobData()
+    return playerData.Job;
+end
+
 function accessor:GetJobPointCount(job, category)
     local jobTable = playerData.JobPoints[job];
     if not jobTable then
@@ -155,6 +225,18 @@ function accessor:GetJobPointTotal(job)
     else
         return total;
     end
+end
+
+function accessor:GetLoggedIn()
+    return (playerData.LoggedIn == true);
+end
+
+function accessor:KnowsAbility(index)
+    return (playerData.Abilities[index] == true);
+end
+
+function accessor:KnowsSpell(index)
+    return (playerData.Spells[index] == true);
 end
 
 return accessor;

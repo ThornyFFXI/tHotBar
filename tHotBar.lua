@@ -35,7 +35,7 @@ ashita.events.register('load', 'load_cb', function ()
     if (AshitaCore:GetPluginManager():IsLoaded('tRenderer') == true) then
         isInitialized = require('initializer');
     else
-        print(chat.header(addon.name) .. chat.error('Renderer plugin must be loaded to use this addon!'));
+        print(chat.header(addon.name) .. chat.color1(2, 'tRenderer') .. chat.error(' plugin must be loaded to use this addon!'));
         isInitialized = false;
     end
 end);
@@ -64,8 +64,16 @@ ashita.events.register('command', 'command_cb', function (e)
         return;
     end
 
-    if (#args > 1) and (string.lower(args[2]) == 'bind') then
-        gBindingGUI:Show();
+    if (#args > 1) and (string.lower(args[2]) == 'activate') then
+        if (#args > 2) then
+            local macroIndex = tonumber(args[3]);
+            gInterface:GetSquareManager():Activate(macroIndex);
+        end
+        return;
+    end
+    
+    if (#args > 1) and (string.lower(args[2]) == 'palette') then
+        gBindings:HandleCommand(args);
         return;
     end
 

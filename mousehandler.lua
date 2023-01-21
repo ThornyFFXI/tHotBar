@@ -11,12 +11,15 @@ ashita.events.register('mouse', 'mouse_cb', function (e)
         return;
     end
     
+    local manager = gInterface:GetSquareManager();
+
     if dragActive then
-        gSettings.PositionX = gSettings.PositionX + (e.x - lastPositionX);
-        gSettings.PositionY = gSettings.PositionY + (e.y - lastPositionY);
+        local pos = gSettings.Position[gSettings.Layout];
+        pos[1] = pos[1] + (e.x - lastPositionX);
+        pos[2] = pos[2] + (e.y - lastPositionY);
         lastPositionX = e.x;
         lastPositionY = e.y;
-        if (e.message == 514) or (bit.band(ffi.C.GetKeyState(0x10), 0x8000) == 0) then
+        if (e.message == 514) or (bit.band(ffi.C.GetKeyState(0x10), 0x8000) == 0) or (manager == nil) or (manager:GetHidden() == true) then
             dragActive = false;
             e.blocked = true;
             blockLeftClick = false;
@@ -24,15 +27,13 @@ ashita.events.register('mouse', 'mouse_cb', function (e)
             return;
         end        
     end
-
-    local manager = gInterface:GetSquareManager();
-    if (manager ~= nil) and (e.message == 513) then
+    
+    if (manager ~= nil) and (e.message == 513) and (manager:GetHidden() == false) then
         local hitFrame, hitSquare = manager:HitTest(e.x, e.y);
         if (hitFrame) then
-            e.blocked = true;
-            blockLeftClick = true;
-
             if (bit.band(ffi.C.GetKeyState(0x10), 0x8000) ~= 0) then
+                e.blocked = true;
+                blockLeftClick = true;
                 dragActive = true;
                 lastPositionX = e.x;
                 lastPositionY = e.y;
@@ -41,10 +42,13 @@ ashita.events.register('mouse', 'mouse_cb', function (e)
 
             if (hitSquare ~= nil) then
                 if (bit.band(ffi.C.GetKeyState(0x11), 0x8000) ~= 0) then
-                    hitSquare:
-                    print(string.format('Bind:%u', hitSquare.Index));
-                else
-                    print(string.format('Activate:%u', hitSquare.Index));
+                    e.blocked = true;
+                    blockLeftClick = true;
+                    hitSquare:Bind();
+                elseif (gSettings.ClickToActivate) then
+                    e.blocked = true;
+                    blockLeftClick = true;
+                    hitSquare:Activate();
                 end
                 return;
             end

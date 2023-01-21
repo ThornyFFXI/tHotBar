@@ -3,42 +3,46 @@ local Updater = {};
 local AbilityRecastPointer = ashita.memory.find('FFXiMain.dll', 0, '894124E9????????8B46??6A006A00508BCEE8', 0x19, 0);
 AbilityRecastPointer = ashita.memory.read_uint32(AbilityRecastPointer);
 
-local function ItemCost(updater, itemId)
-    local resource = AshitaCore:GetResourceManager():GetItemById(itemId);
-    local containers = T{ 0 };
-    if (bit.band(resource.Flags, 0x800) ~= 0) then
-        containers = T { 0, 8, 10, 11, 12, 13, 14, 15, 16 };
+local function ItemCost(updater, items)
+    local containers = updater.Containers;
+    if (updater.Containers == nil) then
+        containers = T{ 0 };
+        local useTemporary = false;
+        local useWardrobes = false;
+        for _,itemId in ipairs(items) do
+            local resource = AshitaCore:GetResourceManager():GetItemById(itemId);
+            if (bit.band(resource.Flags, 0x800) ~= 0) then
+                useWardrobes = true;
+            else
+                useTemporary = true;
+            end
+        end
+        if (useWardrobes) then
+            containers = T { 0, 8, 10, 11, 12, 13, 14, 15, 16 };
+        end
+        if (useTemporary) then
+            containers:append(3);
+        end
+        updater.Containers = containers;
     end
-    
-    local invMgr = AshitaCore:GetMemoryManager():GetInventory();
+
     local itemCount = 0;
-    for _,c in ipairs(containers) do
-        for i = 1,80 do
-            local item = invMgr:GetContainerItem(c, i);
-            if (item ~= nil) and (item.Id == itemId) then
-                itemCount = itemCount + item.Count;            
+    for _,item in ipairs(items) do
+        local itemData = gInventory:GetItemData(item);
+        if (itemData ~= nil) then
+            for _,itemEntry in ipairs(itemData.Locations) do
+                if (updater.Containers:contains(itemEntry.Container)) then
+                    itemCount = itemCount + itemEntry.Count;
+                end
             end
         end
     end
 
-    if (updater.Cost) then
-        updater.Cost.text = tostring(itemCount);
-        updater.Cost.visible = true;
-    end
-
-    return itemCount > 0;
+    return tostring(itemCount), (itemCount > 0);
 end
 
 local function ChargeCost(updater, recastReady)
-    if (updater.Cost) then
-        if (recastReady == nil) then
-            updater.Cost.visible = false;
-        else
-            updater.Cost.text = tostring(recastReady);
-            updater.Cost.visible = true;
-        end
-    end
-    return (type(recastReady) == 'number') and (recastReady > 0);
+    return tostring(recastReady), (recastReady > 0);
 end
 
 local function FinishingMoveCost(updater, minimumMoves)
@@ -61,12 +65,7 @@ local function FinishingMoveCost(updater, minimumMoves)
         end
     end
 
-    if (updater.Cost) then
-        updater.Cost.text = tostring(finishingMoves);
-        updater.Cost.visible = true;
-    end
-
-    return (finishingMoves >= minimumMoves);
+    return tostring(finishingMoves), (finishingMoves >= minimumMoves);
 end
 
 local function RuneEnchantmentCost(updater)
@@ -81,12 +80,7 @@ local function RuneEnchantmentCost(updater)
         end
     end
 
-    if (updater.Cost) then
-        updater.Cost.text = tostring(runeCount);
-        updater.Cost.visible = true;
-    end
-
-    return (runeCount > 0);
+    return tostring(runeCount), (runeCount > 0);
 end
 
 local function GetAbilityTimerData(id)
@@ -104,17 +98,6 @@ local function GetAbilityTimerData(id)
         Modifier = 0,
         Recast = 0
     };
-end
-
-local function GetAbilityAvailable(resource)
-    return AshitaCore:GetMemoryManager():GetPlayer():HasAbility(resource.Id);
-end
-
-local function GetAbilityCostMet(resource)
-    if (resource.TPCost == 0) then
-        return true;
-    end
-    return (AshitaCore:GetMemoryManager():GetParty():GetMemberTP(0) >= resource.TPCost);
 end
 
 --Returns the max number of stratagems and the recast time per stratagem.
@@ -171,11 +154,14 @@ local function RecastToString(timer)
         return string.format('%i:%02i', h, m);
     elseif (timer >= 3600) then
         local m = math.floor(timer / 3600);
-        local s = math.ceil(math.fmod(timer, 3600) / 60);
+        local s = math.floor(math.fmod(timer, 3600) / 60);
         return string.format('%i:%02i', m, s);
     else
-        local s = math.ceil(timer / 60);
-        return string.format('%i', s);
+        if (timer < 60) then
+            return '1';
+        else
+            return string.format('%i', math.floor(timer / 60));
+        end
     end
 end
 
@@ -185,7 +171,7 @@ end
 local function GetRecastData(resource)
     local timer = GetRecastTimer(resource.RecastTimerId);
     if (timer == 0) then
-        return true, nil;
+        return true, '';
     else
         return false, RecastToString(timer);
     end
@@ -203,7 +189,7 @@ local function GetStratagemData()
 
     local timer = GetRecastTimer(231);
     if (timer == 0) then
-        return count, recast;
+        return count;
     end
 
     local maxRecast = count * recast;
@@ -223,7 +209,7 @@ local function GetQuickDrawData()
     local chargeValue = baseRecast / 2;
     local timer = data.Recast;
     if timer == 0 then
-        return 2, chargeValue;
+        return 2;
     end
 
     local remainingCharges = math.floor((baseRecast - data.Recast) / chargeValue);
@@ -241,7 +227,7 @@ local function GetReadyData()
     local chargeValue = baseRecast / 3;
     local timer = data.Recast;
     if timer == 0 then
-        return 3, chargeValue;
+        return 3;
     end
 
     local remainingCharges = math.floor((baseRecast - data.Recast) / chargeValue);
@@ -256,21 +242,26 @@ function Updater:New()
     return o;
 end
 
-function Updater:Initialize(square)
-    self.Binding = square.Binding;
-    self.Square  = square;
-    self.Resource = AshitaCore:GetResourceManager():GetAbilityById(self.Binding.ActionId + 512);
+function Updater:Initialize(square, binding)
+    self.Binding       = binding;
+    self.Square        = square;
+    self.StructPointer = square.StructPointer;
+    self.Resource      = AshitaCore:GetResourceManager():GetAbilityById(self.Binding.Id);
 
-    if (self.Cost) then
-        if (self.Resource.TPCost > 0) then
-            self.Cost.text = tostring(self.Resource.TPCost);
-            self.Cost.visible = true;
-        else
-            self.Cost.visible = false;
-        end
+    self.StructPointer.Hotkey = square.Hotkey;
+    self.StructPointer.OverlayImage1 = '';
+    local image = GetImagePath(self.Binding.Image);
+    if (image == nil) then
+        self.StructPointer.IconImage = '';
+    else
+        self.StructPointer.IconImage = image;
     end
+
+    local layout = gInterface:GetSquareManager().Layout;
+    self.CrossImage = layout.CrossPath;
+    self.TriggerImage = layout.TriggerPath;
     
-    --Set recast function based on what the ability is.
+    --Set cost and recast function for charge-based abilities.
     if (self.Resource.RecastTimerId == 102) then
         self.RecastFunction = GetReadyData;
         self.CostFunction = ChargeCost;
@@ -282,42 +273,50 @@ function Updater:Initialize(square)
         self.CostFunction = ChargeCost;
     else
         self.RecastFunction = GetRecastData;
+        if (self.Resource.TPCost < 1) then
+            self.CostFunction = function()
+                return '', true;
+            end
+        else
+            self.CostFunction = (function(a)
+                return tostring(a), (AshitaCore:GetMemoryManager():GetParty():GetMemberTP(0) >= a);
+            end):bind1(self.Resource.TPCost);
+        end
     end
 
-    if (self.Binding) then
-        local flourishes = T{
-            [204] = 1,
-            [205] = 1,
-            [206] = 1,
-            [207] = 1,
-            [208] = 1,
-            [209] = 2,
-            [264] = 1,
-            [313] = 2,
-            [314] = 3
-        };
-        local flourish = flourishes[self.Binding.ActionId];
+    --Other cost overrides.
+    local flourishes = T{
+        [716] = 1,
+        [717] = 1,
+        [718] = 1,
+        [719] = 1,
+        [720] = 1,
+        [721] = 2,
+        [776] = 1,
+        [825] = 2,
+        [826] = 3
+    };
+    local flourish = flourishes[self.Binding.Id];
 
-        --Custom (for use with jugs and such)
-        if (self.Binding.Item) then
-            self.CostFunction = ItemCost:bind2(self.Binding.Item);
+    --Custom (for use with jugs and such)
+    if (self.Binding.CostOverride) then
+        self.CostFunction = ItemCost:bind2(self.Binding.CostOverride);
 
-        --Angon
-        elseif (self.Binding.ActionId == 170) then
-            self.CostFunction = ItemCost:bind2(18259);
+    --Angon
+    elseif (self.Binding.Id == 682) then
+        self.CostFunction = ItemCost:bind2(T{18259});
 
-        --Tomahawk
-        elseif (self.Binding.ActionId == 150) then
-            self.CostFunction = ItemCost:bind2(18258);
+    --Tomahawk
+    elseif (self.Binding.Id == 662) then
+        self.CostFunction = ItemCost:bind2(T{18258});
 
-        --Finishing Moves
-        elseif flourish ~= nil then
-            self.CostFunction = FinishingMoveCost:bind2(flourish);
+    --Finishing Moves
+    elseif flourish ~= nil then
+        self.CostFunction = FinishingMoveCost:bind2(flourish);
 
-        --Rune Enchantment
-        elseif T{ 344, 366, 368, 369, 371, 372, 373, 375, 376 }:contains(self.Binding.ActionId) then
-            self.CostFunction = RuneEnchantmentCost;
-        end
+    --Rune Enchantment
+    elseif T{ 856, 878, 880, 881, 883, 884, 885, 887, 888 }:contains(self.Binding.Id) then
+        self.CostFunction = RuneEnchantmentCost;
     end
 end
 
@@ -325,50 +324,50 @@ function Updater:Destroy()
 
 end
 
-function Updater:Render()
+function Updater:Tick()
     --RecastReady will hold number of charges for charged abilities.
-    local recastReady, recastDisplay = self.RecastFunction(self.Resource);
-    local abilityAvailable           = GetAbilityAvailable(self.Resource);
-    local abilityCostMet             = GetAbilityCostMet(self.Resource) and abilityAvailable;
+    local recastReady, recastDisplay  = self.RecastFunction(self.Resource);
+    local abilityAvailable            = gPlayer:KnowsAbility(self.Resource.Id);
+    local abilityCostDisplay, costMet = self:CostFunction(recastReady);
 
-    if self.Activation then
-        if (self.Square.ActivationTimer > os.clock()) then
-            self.Activation.visible = true;
-        else
-            self.Activation.visible = false;
-        end
+    if (gSettings.ShowName) and (self.Binding.ShowName) then
+        self.StructPointer.Name = self.Binding.Label;
+    else
+        self.StructPointer.Name = '';
     end
 
-    --recastReady being passed in to save multiple calculations of charges on charged abilities.
-    if (self.CostFunction) then
-        if not self:CostFunction(recastReady) then
-            abilityCostMet = false;
-        end
+    if (gSettings.ShowCost) and (self.Binding.ShowCost) then
+        self.StructPointer.Cost = abilityCostDisplay;
+    else
+        self.StructPointer.Cost = '';
+    end
+    
+    if (gSettings.ShowRecast) and (self.Binding.ShowRecast) and (recastDisplay ~= nil) then
+        self.StructPointer.Recast = recastDisplay;
+    else
+        self.StructPointer.Recast = '';
     end
 
-    if self.Cross then
+    if (gSettings.ShowCross) and (self.Binding.ShowCross) then
         if abilityAvailable == false then
-            self.Cross.visible = true;
+            self.StructPointer.OverlayImage2 = self.CrossImage;
         else
-            self.Cross.visible = false;
+            self.StructPointer.OverlayImage2 = '';
         end
     end
 
-    if self.Recast then
-        if (type(recastDisplay) ~= 'string') then
-            self.Recast.visible = false;
+    if (gSettings.ShowTrigger) and (self.Binding.ShowTrigger) then
+        if (self.Square.Activation > os.clock()) then
+            self.StructPointer.OverlayImage3 = self.TriggerImage;
         else
-            self.Recast.text = recastDisplay;
-            self.Recast.visible = true;
+            self.StructPointer.OverlayImage3 = '';
         end
     end
 
-    if self.Icon then
-        if abilityCostMet then
-            self.Icon.color = self.OpaqueColor;
-        else
-            self.Icon.color = self.DimmedColor;
-        end
+    if (gSettings.ShowFade) and (self.Binding.ShowFade) and ((costMet == false) or (recastReady == 0) or (recastReady == false)) then
+        self.StructPointer.Fade = 1;
+    else
+        self.StructPointer.Fade = 0;
     end
 end
 

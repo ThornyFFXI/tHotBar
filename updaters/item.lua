@@ -9,62 +9,12 @@ local function GetTimeUTC()
     return ashita.memory.read_uint32(ptr + 0x0C);
 end
 
-local function GetRecastTimer(item)
-    local resource = AshitaCore:GetResourceManager():GetItemById(item.Id);
-    local currentTime = GetTimeUTC();
-    local useTime = (struct.unpack('L', item.Extra, 5) + vanaOffset) - currentTime;
-    if (useTime < -1) then
-        useTime = 0;
-    elseif (useTime == -1) then
-        useTime = 1;
-    end
-
-    local equipTime;
-    if (item.Flags == 5) then
-        equipTime = (struct.unpack('L', item.Extra, 9) + vanaOffset) - currentTime;
-        if (equipTime < -1) then
-            equipTime = 0;
-        elseif (equipTime == -1) then
-            equipTime = 1;
-        end
-    else
-        equipTime = resource.CastDelay;
-    end
-    return math.max(useTime, equipTime);
-end
-
-local function GetItemRecast(itemId)
-    local resource = AshitaCore:GetResourceManager():GetItemById(itemId);
-    local containers = T{ 0, 3 };
-    local lowestRecast = 0;
-    if (bit.band(resource.Flags, 0x800) ~= 0) then
-        containers = T { 0, 8, 10, 11, 12, 13, 14, 15, 16 };
-        lowestRecast = -1;
-    end
-
-    --Item is equippable.. so need to find a copy and check extdata.
-    local invMgr = AshitaCore:GetMemoryManager():GetInventory();
-    local count = 0;
-    for _,c in ipairs(containers) do
-        for i = 1,80 do
-            local item = invMgr:GetContainerItem(c, i);
-            if (item ~= nil) and (item.Id == itemId) then
-                count = count + item.Count;
-                if (lowestRecast ~= 0) then
-                    local recast = GetRecastTimer(item);
-                    if (lowestRecast == -1) or (recast < lowestRecast) then
-                        lowestRecast = recast;
-                    end
-                end
-            end
-        end
-    end
-    
-    return count, lowestRecast;
-end
-
 --Item timer is in full seconds not frames.
 local function RecastToString(timer)
+    if (timer < 1) then
+        return nil;
+    end
+
     if (timer >= 3600) then
         local h = math.floor(timer / (3600));
         local m = math.floor(timer / 60);
@@ -78,6 +28,65 @@ local function RecastToString(timer)
     end
 end
 
+local function GetItemRecast(itemId)
+    local containers = T{ 0, 3 };
+    local itemCount = 0;
+    local itemData = gInventory:GetItemData(itemId);
+    if (itemData ~= nil) then
+        local currentTime = GetTimeUTC();
+        for _,itemEntry in ipairs(itemData.Locations) do
+            if (containers:contains(itemEntry.Container)) then
+                itemCount = itemCount + itemEntry.Count;
+            end
+        end
+    end
+
+    return tostring(itemCount), (itemCount > 0);
+end
+
+local function GetEquipmentRecast(itemResource)
+    local containers = T{ 0, 8, 10, 11, 12, 13, 14, 15, 16 };
+    local itemCount = 0;
+    local itemData = gInventory:GetItemData(itemResource.Id);
+    local lowestRecast = -1;
+    if (itemData ~= nil) then
+        local currentTime = GetTimeUTC();
+        for _,itemEntry in ipairs(itemData.Locations) do
+            if (containers:contains(itemEntry.Container)) then
+                local item = gInventory:GetItemTable(itemEntry.Container, itemEntry.Index);
+                local useTime = (struct.unpack('L', item.Extra, 5) + vanaOffset) - currentTime;
+                if (useTime < 0) then
+                    useTime = 0;
+                elseif (useTime == 0) then
+                    useTime = 1;
+                end
+
+                local equipTime;
+                if (item.Flags == 5) then
+                    equipTime = (struct.unpack('L', item.Extra, 9) + vanaOffset) - currentTime;
+                    if (equipTime < 0) then
+                        equipTime = 0;
+                    elseif (equipTime == 0) then
+                        equipTime = 1;
+                    end
+                else
+                    equipTime = itemResource.CastDelay;
+                end
+
+                local recast = math.max(useTime, equipTime);
+                if (lowestRecast == -1) or (recast < lowestRecast) then
+                    lowestRecast = recast;
+                end
+
+                itemCount = itemCount + item.Count;
+            end
+        end
+    end
+
+    return itemCount, RecastToString(lowestRecast);
+end
+
+
 function Updater:New()
     local o = {};
     setmetatable(o, self);
@@ -85,48 +94,70 @@ function Updater:New()
     return o;
 end
 
-function Updater:Initialize(square)
-    self.Binding = square.Binding;
-    self.Square  = square;
-    self.Resource = AshitaCore:GetResourceManager():GetItemById(self.Binding.ActionId);
+function Updater:Initialize(square, binding)
+    self.Binding       = binding;
+    self.Square        = square;
+    self.StructPointer = square.StructPointer;
+    self.Resource      = AshitaCore:GetResourceManager():GetItemById(self.Binding.Id);
+
+    self.StructPointer.Hotkey = square.Hotkey;
+    self.StructPointer.OverlayImage1 = '';
+    self.StructPointer.OverlayImage2 = '';
+    local image = GetImagePath(self.Binding.Image);
+    if (image == nil) then
+        self.StructPointer.IconImage = '';
+    else
+        self.StructPointer.IconImage = image;
+    end
+
+    if (bit.band(self.Resource.Flags, 0x800) ~= 0) then
+        self.RecastFunction = GetEquipmentRecast:bind1(self.Resource);
+    else
+        self.RecastFunction = GetItemRecast:bind1(self.Resource.Id);
+    end
+
+    local layout = gInterface:GetSquareManager().Layout;
+    self.CrossImage = layout.CrossPath;
+    self.TriggerImage = layout.TriggerPath;
 end
 
 function Updater:Destroy()
 
 end
 
-function Updater:Render()
-    --RecastReady will hold number of charges for charged abilities.
-    local count, recastTimer = GetItemRecast(self.Resource.Id);
+function Updater:Tick()
+    local count, recastTimer = self.RecastFunction();
 
-    if self.Activation then
-        if (self.Square.ActivationTimer > os.clock()) then
-            self.Activation.visible = true;
-        else
-            self.Activation.visible = false;
-        end
+    if (gSettings.ShowName) and (self.Binding.ShowName) then
+        self.StructPointer.Name = self.Binding.Label;
+    else
+        self.StructPointer.Name = '';
+    end
+
+    if (gSettings.ShowCost) and (self.Binding.ShowCost) and (bit.band(self.Resource.Flags, 0x800) == 0) then
+        self.StructPointer.Cost = tostring(count);
+    else
+        self.StructPointer.Cost = '';
     end
     
-    if (self.Cost) then
-        self.Cost.text = tostring(count);
-        self.Cost.visible = true;
+    if (gSettings.ShowRecast) and (self.Binding.ShowRecast) and (recastTimer ~= nil) then
+        self.StructPointer.Recast = recastTimer;
+    else
+        self.StructPointer.Recast = '';
     end
 
-    if self.Recast then
-        if (recastTimer < 1) then
-            self.Recast.visible = false;
+    if (gSettings.ShowTrigger) and (self.Binding.ShowTrigger) then
+        if (self.Square.Activation > os.clock()) then
+            self.StructPointer.OverlayImage3 = self.TriggerImage;
         else
-            self.Recast.text = RecastToString(recastTimer);
-            self.Recast.visible = true;
+            self.StructPointer.OverlayImage3 = '';
         end
     end
 
-    if self.Icon then
-        if (recastTimer == 0) and (count > 0) then
-            self.Icon.color = self.OpaqueColor;
-        else
-            self.Icon.color = self.DimmedColor;
-        end
+    if (gSettings.ShowFade) and (self.Binding.ShowFade) and ((count == 0) or (recastTimer ~= nil)) then
+        self.StructPointer.Fade = 1;
+    else
+        self.StructPointer.Fade = 0;
     end
 end
 

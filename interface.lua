@@ -47,11 +47,13 @@ ffi.cdef[[
     typedef struct AbilitySquareState_t {
         uint32_t Fade;
         char Cost[32];
-        char Macro[32];
+        char Hotkey[32];
         char Name[32];
         char Recast[32];
         char IconImage[256];
-        char OverlayImage[256];
+        char OverlayImage1[256];
+        char OverlayImage2[256];
+        char OverlayImage3[256];
     } AbilitySquareState_t;
 
     typedef struct AbilitySquarePanelState_t {
@@ -94,19 +96,6 @@ local function lua_SquareInitializerToStruct(square)
     return struct;
 end
 
-local function ResolvePath(path)
-    if (ashita.fs.exists(path)) then
-        return path;
-    end
-
-    local check = string.format('%sconfig/addons/%s/resources/%s', AshitaCore:GetInstallPath(), addon.name, path);
-    if (ashita.fs.exists(check)) then
-        return check;
-    end
-
-    return string.format('%saddons/%s/resources/%s', AshitaCore:GetInstallPath(), addon.name, path);
-end
-
 local function lua_EventInitializerToStruct(layout)
     local struct = ffi.new('EventInitializer_t');
     struct.UniqueIdentifier = layout.Path;
@@ -118,7 +107,7 @@ local function lua_EventInitializerToStruct(layout)
     struct.Icon = lua_ImageInitializerToStruct(layout.ImageObjects.Icon);
     struct.Overlay = lua_ImageInitializerToStruct(layout.ImageObjects.Overlay);
     struct.IconFadeAlpha = layout.IconFadeAlpha;
-    struct.FramePath = ResolvePath(layout.FramePath);
+    struct.FramePath = layout.FramePath;
     struct.PanelHeight = layout.PanelHeight;
     struct.PanelWidth = layout.PanelWidth;
     struct.SquareHeight = layout.SquareHeight;
@@ -131,48 +120,17 @@ local function lua_EventInitializerToStruct(layout)
     return struct;
 end
 
-local function LoadFile(filePath)
-    if not ashita.fs.exists(filePath) then
-        return nil;
-    end
-
-    local success, loadError = loadfile(filePath);
-    if not success then
-        print(chat.header(addon.name) .. chat.error('Failed to load resource file: ') .. chat.color1(2, filePath));
-        print(chat.header(addon.name) .. chat.error(loadError));
-        return nil;
-    end
-
-    local result, output = pcall(success);
-    if not result then
-        print(chat.header(addon.name) .. chat.error('Failed to call resource file: ') .. chat.color1(2, filePath));
-        print(chat.header(addon.name) .. chat.error(loadError));
-        return nil;
-    end
-
-    return output;
-end
-
 local function LoadLayout(interface, layoutName)
-    if (interface.Layout) then
-        if (interface.Layout.Name == layoutName) then
-            -- If layout is already the active layout, don't bother changing anything.
-            return true;
-        else
-            -- Clear saved position when changing layouts, so default can be used again.
-            gSettings.PositionX = nil;
-            gSettings.PositionY = nil;
-        end
-    end
+    interface.Layout = nil;
 
     --Attempt to load layout file.
-    local layouts = T{
+    local layoutPaths = T{
         string.format('%sconfig/addons/%s/resources/layouts/%s.lua', AshitaCore:GetInstallPath(), addon.name, layoutName),
         string.format('%saddons/%s/resources/layouts/%s.lua', AshitaCore:GetInstallPath(), addon.name, layoutName),
     };
 
-    for _,path in ipairs(layouts) do
-        interface.Layout = LoadFile(path);
+    for _,path in ipairs(layoutPaths) do
+        interface.Layout = LoadFile_s(path);
         if (interface.Layout ~= nil) then
             interface.Layout.Name = layoutName;
             interface.Layout.Path = path;
@@ -183,11 +141,31 @@ local function LoadLayout(interface, layoutName)
     if (interface.Layout == nil) then
         return false;
     end
-            
-    if (gSettings.PositionX == nil) or (gSettings.PositionY == nil) then
-        --Fill in position from new layout..
-        gSettings.PositionX = interface.Layout.DefaultX;
-        gSettings.PositionY = interface.Layout.DefaultY;
+
+    interface.Layout.FramePath = GetImagePath(interface.Layout.FramePath);
+    if (interface.Layout.FramePath == nil) then
+        interface.Layout.FramePath = '';
+    end
+    interface.Layout.CrossPath = GetImagePath(interface.Layout.CrossPath);
+    if (interface.Layout.CrossPath == nil) then
+        interface.Layout.CrossPath = '';
+    end
+    interface.Layout.TriggerPath = GetImagePath(interface.Layout.TriggerPath);
+    if (interface.Layout.TriggerPath == nil) then
+        interface.Layout.TriggerPath = '';
+    end
+    local newPaths = T{};
+    for _,value in ipairs(interface.Layout.SkillchainAnimationPaths) do
+        local path = GetImagePath(value);
+        if (path ~= nil) then
+            newPaths:append(path);
+        end
+    end
+    interface.Layout.SkillchainAnimationPaths = newPaths;
+
+    --Fill in position from new layout if necessary..
+    if (gSettings.Position[layoutName] == nil) then
+        gSettings.Position[layoutName] = { interface.Layout.DefaultX, interface.Layout.DefaultY };
         settings.save();
     end
 
@@ -206,6 +184,7 @@ function interface:Destroy()
     
     if (self.StructPointer ~= nil) then
         AshitaCore:GetPluginManager():RaiseEvent('tRenderer_Destroy', (self.Layout.Path .. '\x00'):totable());
+        self.StructPointer = nil;
     end
 end
 
@@ -218,22 +197,24 @@ function interface:GetSquareManager()
 end
 
 function interface:HandleEvent(e)
-    if (e.name == self.EventIdentifier) and (self.StructPointer == nil) then
+    if (e.name == self.EventIdentifier) and (self.StructPointer == nil) then        
         self.StructPointer = struct.unpack('L', e.data, 1);
         self.SquareManager:Initialize(self.Layout, self.StructPointer);
-        gSettings.layout = self.Layout.Name;
+        gBindings:Update();
+        gSettings.Layout = self.Layout.Name;
         settings.save();
     end
 end
 
 function interface:Initialize(layoutName)
     if (self.Initializer ~= nil) and (self.StructPointer == nil) then
-        print(chat.header(addon.name) .. chat.error('Could not load layout.  Please wait for last layout to finish loading before changing again.'));
+        Error('Could not load layout.  Please wait for last layout to finish loading then manually apply layout via $H/tb$R.');
         return;
     end
 
     self.Initializer = nil;
     if (self.StructPointer ~= nil) then
+        self.SquareManager:Destroy();
         AshitaCore:GetPluginManager():RaiseEvent('tRenderer_Destroy', (self.Layout.Path .. '\x00'):totable());
         self.StructPointer = nil;
     end
@@ -245,7 +226,7 @@ function interface:Initialize(layoutName)
             self:HandleEvent(e);
         end):bind1(self));
     else
-        print(chat.header(addon.name) .. chat.error('No layout loaded.  Please select a layout via ') .. chat.color1(2, '/tb') .. chat.error('.'));
+        Error(string.format('Failed to load layout $H%s$R.  Please select a layout via $H/tb$R.'), layoutName);
     end
 end
 
