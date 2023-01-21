@@ -2,7 +2,8 @@
 tHotBar is an interface for binding and visualizing macros more easily.  It uses visual elements to display as much information as possible, and is highly customizable in appearance.
 
 ## How To Install
-Download the release zip.  Extract directly to your Ashita directory(the folder with ashita-cli.exe in it!).  Everything should fall into place.  If you feel you've messed that up, the required components are a plugin named 'tRenderer.dll' in your plugins folder, and a folder named 'tHotBar' in your addons folder.
+Download the release zip for the Ashita client version you are currently using.  Extract directly to your Ashita directory(the folder with ashita-cli.exe in it!).  Everything should fall into place.  If you feel you've messed that up, the required components are a plugin named 'tRenderer.dll' in your plugins folder, and a folder named 'tHotBar' in your addons folder.  If you need to build tRenderer yourself for a different client version, or simply don't trust foreign dlls, you can access the source at:<br>
+https://github.com/ThornyFFXI/tHotBar
 
 ## How To Load
 You must load the plugin tRenderer with **/load trenderer** prior to loading the addon tHotBar with **/addon load tHotBar**.  If you place these in your autoload file, you must ensure that both addons itself and trenderer are loaded prior to loading tHotBar.
@@ -40,14 +41,20 @@ Change to next palette.
 Change to previous palette.
 
 ## Custom Icons
-The binding menu allows you to enter an image path to use your own images for any ability you want.  If you want to replace existing icons, or add new icons, you should do so by adding them to the directory **Ashita/config/addons/tHotBar/resources**.  You can create this directory if it does not yet exist.  All image bindings will check config prior to checking the built in folder, so this allows you to use any file structure you want without worrying about colliding with the addon's resources.  The preferred method is to use action ID as the filename, but that is not required.  For example, to add a mighty strikes icon, you would use:<br>
+The binding menu allows you to enter an image path to use your own images for any ability you want.  If you want to replace existing icons, or add new icons, you should do so by adding them to the directory:<br>
+**Ashita/config/addons/tHotBar/resources**<br>
+You can create this directory if it does not yet exist.  All image bindings will check config prior to checking the built in folder, so this allows you to use any file structure you want without worrying about colliding with the addon's resources.  The preferred method is to use action ID as the filename, but that is not required.  For example, to add a mighty strikes icon, you would use:<br>
 **Ashita/config/addons/tHotBar/resources/abilities/16.png**<br>
 and you would enter the binding as:<br>
 **abilities/16.png**<br>
 You can also use the game's item resources directly, as tHotBar will do when binding items.  To do this, simply enter the binding as **ITEM:28540** using the item id.  This can be found on FFXIAH.com or many other places.  This example would show a warp ring.
 
 ## Custom Layouts
-If you want to adjust the layouts, the same thing applies!  Copy the included layout from **Ashita/addons/tHotBar/resources/layouts** to **Ashita/config/addons/tHotBar/resources/layouts** prior to making changes.  Even if the original remains, layouts in config will always take priority.  Make sure to click 'refresh' in the config UI to detect new or altered layouts after editing files on disk.
+If you want to adjust the layouts, the same thing applies!  Copy the included layout from:<br>
+**Ashita/addons/tHotBar/resources/layouts**<br>
+to<br>
+**Ashita/config/addons/tHotBar/resources/layouts**<br>
+prior to making changes.  Even if the original remains, layouts in config will always take priority.  Make sure to click 'refresh' in the config UI to detect new or altered layouts after editing files on disk.
 
 ## Changing Bind Keys
 This is done in the layout file.  Follow the instructions from the previous header to make a copy of your desired layout file, then change the DefaultMacro field in the Squares table of the layout.
@@ -56,7 +63,6 @@ This is done in the layout file.  Follow the instructions from the previous head
 tHotBar uses ashita binds to register keyboard input.  That means if you have a luashitacast profile or anything else binding to the same keys tHotBar uses, you may have interference and suboptimal performance.  If you feel something else has interfered with your bindings, re-applying your theme from the main UI will always put the bindings back to how tHotBar expects them to be.
 
 ## FAQ
-#### You do know people are going to skip the caps and call this thot bar, right?<br>
+### You do know people are going to skip the caps and call this thot bar, right?<br>
 Yes, that's ok.
-
 #### More to come as common questions arise.
