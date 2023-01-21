@@ -3,7 +3,7 @@ tHotBar is an interface for binding and visualizing macros more easily.  It uses
 
 ## How To Install
 Download the release zip for the Ashita client version you are currently using.  Extract directly to your Ashita directory(the folder with ashita-cli.exe in it!).  Everything should fall into place.  If you feel you've messed that up, the required components are a plugin named 'tRenderer.dll' in your plugins folder, and a folder named 'tHotBar' in your addons folder.  If you need to build tRenderer yourself for a different client version, or simply don't trust foreign dlls, you can access the source at:<br>
-https://github.com/ThornyFFXI/tHotBar
+https://github.com/ThornyFFXI/tRenderer
 
 ## How To Load
 You must load the plugin tRenderer with **/load trenderer** prior to loading the addon tHotBar with **/addon load tHotBar**.  If you place these in your autoload file, you must ensure that both addons itself and trenderer are loaded prior to loading tHotBar.
