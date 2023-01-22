@@ -140,7 +140,7 @@ Setup.Item = function(skipUpdate)
             local item = gInventory:GetItemTable(bag, i);
             if (item ~= nil) then
                 local res = resMgr:GetItemById(item.Id);
-                if (bit.band(res.Flags, 0x200) == 0x200) then
+                if (res ~= nil) and (bit.band(res.Flags, 0x200) == 0x200) then
                     if (not state.ActionResources:contains(res)) then
                         state.ActionResources:append(res);
                     end
@@ -155,7 +155,7 @@ Setup.Item = function(skipUpdate)
             local item = gInventory:GetItemTable(bag, i);
             if (item ~= nil) then
                 local res = resMgr:GetItemById(item.Id);
-                if (bit.band(res.Flags, 0x400) == 0x400) then
+                if (res ~= nil) and (bit.band(res.Flags, 0x400) == 0x400) then
                     if (not state.ActionResources:contains(res)) then
                         state.ActionResources:append(res);
                     end

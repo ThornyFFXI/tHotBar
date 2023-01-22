@@ -32,7 +32,7 @@ local function ItemCost(updater, items)
         if (itemData ~= nil) then
             for _,itemEntry in ipairs(itemData.Locations) do
                 if (updater.Containers:contains(itemEntry.Container)) then
-                    itemCount = itemCount + itemEntry.Count;
+                    itemCount = itemCount + gInventory:GetItemTable(itemEntry.Container, itemEntry.Index).Count;
                 end
             end
         end

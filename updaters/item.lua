@@ -36,7 +36,7 @@ local function GetItemRecast(itemId)
         local currentTime = GetTimeUTC();
         for _,itemEntry in ipairs(itemData.Locations) do
             if (containers:contains(itemEntry.Container)) then
-                itemCount = itemCount + itemEntry.Count;
+                itemCount = itemCount + gInventory:GetItemTable(itemEntry.Container, itemEntry.Index).Count;
             end
         end
     end
