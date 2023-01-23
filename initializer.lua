@@ -21,13 +21,13 @@ function GetImagePath(image, default)
         image,
         string.format('%sconfig/addons/%s/resources/%s', AshitaCore:GetInstallPath(), addon.name, image),
         string.format('%saddons/%s/resources/%s', AshitaCore:GetInstallPath(), addon.name, image),
-        default,
+        default or '',
         string.format('%sconfig/addons/%s/resources/misc/unknown.png', AshitaCore:GetInstallPath(), addon.name),
-        string.format('%saddons/%s/resources/unknown.png', AshitaCore:GetInstallPath(), addon.name),
+        string.format('%saddons/%s/resources/misc/unknown.png', AshitaCore:GetInstallPath(), addon.name),
     };
 
     for _,path in ipairs(potentialPaths) do
-        if (ashita.fs.exists(path)) then
+        if (path ~= '') and (ashita.fs.exists(path)) then
             return path;
         end
     end

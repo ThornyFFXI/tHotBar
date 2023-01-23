@@ -1,8 +1,8 @@
-
 local d3d8 = require('d3d8');
 local d3d8_device = d3d8.get_device();
 local header = { 1.0, 0.75, 0.55, 1.0 };
 local state = { IsOpen={ false } };
+local wsmap = require('resources.wsmap');
 local Setup = {};
 local Update = {};
 
@@ -343,7 +343,11 @@ Update.Ability = function(index)
         state.MacroText = { string.format('/ja \"%s\" <t>', res.Name[1]) };
     end
     state.MacroLabel = { res.Name[1] };
-    state.MacroImage = { string.format('abilities/%u.png', res.Id - 0x200) };
+    if ((res.RecastTimerId == 0) or (res.RecastTimerId == 254)) then
+        state.MacroImage = { 'abilities/1hr.png' };
+    else
+        state.MacroImage = { string.format('abilities/%u.png', res.Id - 0x200) };
+    end
     state.CostOverride = { '' };
     UpdateMacroImage();
 end
@@ -411,7 +415,7 @@ Update.Weaponskill = function(index)
         state.MacroText = { string.format('/ws \"%s\" <t>', res.Name[1]) };
     end
     state.MacroLabel = { res.Name[1] };
-    state.MacroImage = { string.format('weaponskills/%u.png', res.Id) };
+    state.MacroImage = { wsmap[res.Id] or '' };
     state.CostOverride = { '' };
     UpdateMacroImage();
 end
@@ -479,33 +483,39 @@ function exposed:Render()
                         { 0, 0 }, { 1, 1 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 });
                     end
                     imgui.SetCursorPos({imgui.GetCursorPosX(), posY + height});
-                    imgui.InputText('##MacroImage', state.MacroImage, 256);
-                    imgui.SameLine();
-                    if (imgui.Button('Update', { 60, 0 })) then
-                        UpdateMacroImage();
+                    if (state.Combos.Type[state.Indices.Type] ~= 'Empty') then
+                        imgui.InputText('##MacroImage', state.MacroImage, 256);
+                        imgui.SameLine();
+                        if (imgui.Button('Update', { 60, 0 })) then
+                            UpdateMacroImage();
+                        end
                     end
                     imgui.TextColored(header, 'Components');
-                    imgui.BeginGroup();
-                    CheckBox('Cost');
-                    imgui.ShowHelp('Display action cost indicators.');
-                    CheckBox('Cross');
-                    imgui.ShowHelp('Displays a X over actions you don\'t currently know.');
-                    CheckBox('Fade');
-                    imgui.ShowHelp('Fades the icon for actions where cooldown is not 0 or cost is not met.');
-                    CheckBox('Recast');
-                    imgui.ShowHelp('Shows action recast timers.');
-                    imgui.EndGroup();
-                    imgui.SameLine();
-                    imgui.BeginGroup();
-                    CheckBox('Name');
-                    imgui.ShowHelp('Shows action names.');
-                    CheckBox('Trigger');
-                    imgui.ShowHelp('Shows an overlay when you activate an action.');
-                    CheckBox('SC Icon', 'SkillchainIcon');
-                    imgui.ShowHelp('Overrides weaponskill icons when a skillchain would be formed.');
-                    CheckBox('SC Animation', 'SkillchainAnimation');
-                    imgui.ShowHelp('Animates a border around weaponskill icons when a skillchain would be formed.');
-                    imgui.EndGroup();
+                    if (state.Combos.Type[state.Indices.Type] ~= 'Empty') then
+                        imgui.BeginGroup();
+                        CheckBox('Cost');
+                        imgui.ShowHelp('Display action cost indicators.');
+                        CheckBox('Cross');
+                        imgui.ShowHelp('Displays a X over actions you don\'t currently know.');
+                        CheckBox('Fade');
+                        imgui.ShowHelp('Fades the icon for actions where cooldown is not 0 or cost is not met.');
+                        CheckBox('Recast');
+                        imgui.ShowHelp('Shows action recast timers.');
+                        imgui.EndGroup();
+                        imgui.SameLine();
+                        imgui.BeginGroup();
+                        CheckBox('Name');
+                        imgui.ShowHelp('Shows action names.');
+                        CheckBox('Trigger');
+                        imgui.ShowHelp('Shows an overlay when you activate an action.');
+                        CheckBox('SC Icon', 'SkillchainIcon');
+                        imgui.ShowHelp('Overrides weaponskill icons when a skillchain would be formed.');
+                        CheckBox('SC Animation', 'SkillchainAnimation');
+                        imgui.ShowHelp('Animates a border around weaponskill icons when a skillchain would be formed.');
+                        imgui.EndGroup();
+                    else
+                        imgui.Text('N/A');
+                    end
                     imgui.TextColored(header, 'Cost Override');
                     imgui.ShowHelp('Entering an item ID, or multiple item IDs seperated by commas, will make cost display as the total amount of those items in your inventory and wardrobes(if equippable) or temporary items(if not).  This can be useful for actions like Call Beast or Reward that use an item, but not always the same item.  Actions like angon and ninjutsu with fixed items are automatically handled without specifying this.');
                     if (state.CostOverride ~= nil) then
