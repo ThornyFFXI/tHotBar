@@ -205,7 +205,13 @@ for i = 0,1 do
 end
 
 local scaling = require('scaling');
-theme.DefaultX = (scaling.window.w - theme.PanelWidth) / 2;
-theme.DefaultY = scaling.window.h - (scaling.scale_height(136) + theme.PanelHeight);
+if ((scaling.window.w == -1) or (scaling.window.h == -1) or (scaling.menu.w == -1) or (scaling.menu.h == -1)) then
+    theme.DefaultX = 0;
+    theme.DefaultY = 0;
+else
+    theme.DefaultX = (scaling.window.w - theme.PanelWidth) / 2;
+    theme.DefaultY = scaling.window.h - (scaling.scale_height(136) + theme.PanelHeight);
+end
+
 
 return theme;

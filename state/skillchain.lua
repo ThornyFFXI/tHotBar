@@ -545,7 +545,12 @@ ashita.events.register('packet_in', 'skillchain_handleincomingpacket', function 
     elseif (e.id == 0x28) then
         local bitData;
         local bitOffset;
+        local maxLength = e.size * 8;
         local function UnpackBits(length)
+            if ((bitOffset + length) > maxLength) then
+                maxLength = 0; --Using this as a flag since any malformed fields mean the data is trash anyway.
+                return 0;
+            end
             local value = ashita.bits.unpack_be(bitData, 0, bitOffset, length);
             bitOffset = bitOffset + length;
             return value;
@@ -602,6 +607,11 @@ ashita.events.register('packet_in', 'skillchain_handleincomingpacket', function 
             pendingActionPacket.Targets:append(target);
         end
         
+        if (maxLength == 0) then
+            Error(string.format('Malformed action packet detected.  Type:$H%u$R User:$H%u$R Targets:$H%u$R', pendingActionPacket.Type, pendingActionPacket.UserId, #pendingActionPacket.Targets));
+            pendingActionPacket.Targets = T{}; --Blank targets so that it doesn't register bad info later.
+        end
+
         HandleActionPacket(pendingActionPacket);
     end
 end);
