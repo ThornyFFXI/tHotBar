@@ -564,6 +564,12 @@ ashita.events.register('packet_in', 'skillchain_handleincomingpacket', function 
         --Unknown 4 bits
         bitOffset = bitOffset + 4;
         pendingActionPacket.Type = UnpackBits(4);
+
+        --Save a little bit of processing for packets that won't relate to SC..
+        if (T{3, 4, 6}:contains(pendingActionPacket.Type) == false) then
+            return;
+        end
+
         pendingActionPacket.Id = UnpackBits(32);
         --Unknown 32 bits
         bitOffset = bitOffset + 32;
