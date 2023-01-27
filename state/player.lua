@@ -51,8 +51,10 @@ if playerIndex ~= 0 then
         end
 
         for i = 1,1024 do
-            playerData.Abilities[i] = AshitaCore:GetMemoryManager():GetPlayer():HasAbility(i);
             playerData.Spells[i] = AshitaCore:GetMemoryManager():GetPlayer():HasSpell(i);
+        end
+        for i = 1,1792 do
+            playerData.Abilities[i] = AshitaCore:GetMemoryManager():GetPlayer():HasAbility(i);
         end
     end
 end
@@ -128,7 +130,7 @@ ashita.events.register('packet_in', 'player_tracker_handleincomingpacket', funct
             playerData.Spells[i] = (ashita.bits.unpack_be(e.data_raw, 4, i, 1) == 1);
         end
     elseif (e.id == 0x0AC) then
-        for i = 1,1024 do
+        for i = 1,1792 do
             playerData.Abilities[i] = (ashita.bits.unpack_be(e.data_raw, 4, i, 1) == 1);
         end
     elseif (e.id == 0x08C) then

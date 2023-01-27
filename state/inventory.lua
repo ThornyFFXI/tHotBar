@@ -132,6 +132,7 @@ ashita.events.register('packet_in', 'inventory_tracker_handleincomingpacket', fu
             --Update count..
             local itemEntry = inventory.Items[itemTable.Id];
             itemEntry.Count = itemEntry.Count + (count - itemTable.Count);
+            itemTable.Count = count;
         end
 
         --Update flags..
@@ -144,7 +145,7 @@ ashita.events.register('packet_in', 'inventory_tracker_handleincomingpacket', fu
         local index = struct.unpack('B', e.data, 0x0B + 1);
         local flags = struct.unpack('B', e.data, 0x0C + 1);
         local itemTable = inventory.Containers[container][index];
-        
+
         --Clear old item entirely if ID changed..
         if (itemTable ~= nil) and (id ~= itemTable.Id) then
             RemoveItem(container, index);
@@ -175,6 +176,7 @@ ashita.events.register('packet_in', 'inventory_tracker_handleincomingpacket', fu
             --Update count..
             local itemEntry = inventory.Items[itemTable.Id];
             itemEntry.Count = itemEntry.Count + (count - itemTable.Count);
+            itemTable.Count = count;
         end
 
         --Update flags..
@@ -189,7 +191,7 @@ ashita.events.register('packet_in', 'inventory_tracker_handleincomingpacket', fu
         local flags = struct.unpack('B', e.data, 0x10 + 1);
         local extra = struct.unpack('c24', e.data, 0x11 + 1) .. '\x00\x00\x00\x00';
         local itemTable = inventory.Containers[container][index];
-        
+
         --Clear old item entirely if ID changed..
         if (itemTable ~= nil) and (id ~= itemTable.Id) then
             RemoveItem(container, index);
@@ -220,6 +222,7 @@ ashita.events.register('packet_in', 'inventory_tracker_handleincomingpacket', fu
             --Update count..
             local itemEntry = inventory.Items[itemTable.Id];
             itemEntry.Count = itemEntry.Count + (count - itemTable.Count);
+            itemTable.Count = count;
         end
         
         --Update remaining data..

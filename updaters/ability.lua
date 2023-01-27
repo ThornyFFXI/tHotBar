@@ -273,7 +273,11 @@ function Updater:Initialize(square, binding)
         self.CostFunction = ChargeCost;
     else
         self.RecastFunction = GetRecastData;
-        if (self.Resource.TPCost < 1) then
+        if (self.Resource.ManaCost > 0) then
+            self.CostFunction = (function(a)
+                return tostring(a), (AshitaCore:GetMemoryManager():GetParty():GetMemberMP(0) >= a);
+            end):bind1(self.Resource.ManaCost);
+        elseif (self.Resource.TPCost < 1) then
             self.CostFunction = function()
                 return '', true;
             end
