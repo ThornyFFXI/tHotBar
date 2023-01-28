@@ -547,7 +547,7 @@ ashita.events.register('packet_in', 'skillchain_handleincomingpacket', function 
         local bitOffset;
         local maxLength = e.size * 8;
         local function UnpackBits(length)
-            if ((bitOffset + length) > maxLength) then
+            if ((bitOffset + length) >= maxLength) then
                 maxLength = 0; --Using this as a flag since any malformed fields mean the data is trash anyway.
                 return 0;
             end
@@ -555,70 +555,71 @@ ashita.events.register('packet_in', 'skillchain_handleincomingpacket', function 
             bitOffset = bitOffset + length;
             return value;
         end
-
-        local pendingActionPacket = T{};
+    
+        local actionPacket = T{};
         bitData = e.data_raw;
         bitOffset = 40;
-        pendingActionPacket.UserId = UnpackBits(32);
+        actionPacket.UserId = UnpackBits(32);
         local targetCount = UnpackBits(6);
         --Unknown 4 bits
         bitOffset = bitOffset + 4;
-        pendingActionPacket.Type = UnpackBits(4);
+        actionPacket.Type = UnpackBits(4);
+        actionPacket.Id = UnpackBits(32);
+        actionPacket.Recast = UnpackBits(32);
 
         --Save a little bit of processing for packets that won't relate to SC..
-        if (T{3, 4, 6}:contains(pendingActionPacket.Type) == false) then
+        if (T{3, 4, 6}:contains(actionPacket.Type) == false) then
             return;
         end
-
-        pendingActionPacket.Id = UnpackBits(32);
-        --Unknown 32 bits
-        bitOffset = bitOffset + 32;
     
-        pendingActionPacket.Targets = T{};
-        for i = 1,targetCount do
-            local target = T{};
-            target.Id = UnpackBits(32);
-            local actionCount = UnpackBits(4);
-            target.Actions = T{};
-            for j = 1,actionCount do
-                local action = {};
-                action.Reaction = UnpackBits(5);
-                action.Animation = UnpackBits(12);
-                action.SpecialEffect = UnpackBits(7);
-                action.Knockback = UnpackBits(3);
-                action.Param = UnpackBits(17);
-                action.Message = UnpackBits(10);
-                action.Flags = UnpackBits(31);
+        actionPacket.Targets = T{};
+        if (targetCount > 0) then
+            for i = 1,targetCount do
+                local target = T{};
+                target.Id = UnpackBits(32);
+                local actionCount = UnpackBits(4);
+                target.Actions = T{};
+                if (actionCount == 0) then
+                    break;
+                else
+                    for j = 1,actionCount do
+                        local action = {};
+                        action.Reaction = UnpackBits(5);
+                        action.Animation = UnpackBits(12);
+                        action.SpecialEffect = UnpackBits(7);
+                        action.Knockback = UnpackBits(3);
+                        action.Param = UnpackBits(17);
+                        action.Message = UnpackBits(10);
+                        action.Flags = UnpackBits(31);
     
-                local hasAdditionalEffect = (UnpackBits(1) == 1);
-                if hasAdditionalEffect then
-                    local additionalEffect = {};
-                    additionalEffect.Damage = UnpackBits(10);
-                    additionalEffect.Param = UnpackBits(17);
-                    additionalEffect.Message = UnpackBits(10);
-                    action.AdditionalEffect = additionalEffect;
+                        local hasAdditionalEffect = (UnpackBits(1) == 1);
+                        if hasAdditionalEffect then
+                            local additionalEffect = {};
+                            additionalEffect.Damage = UnpackBits(10);
+                            additionalEffect.Param = UnpackBits(17);
+                            additionalEffect.Message = UnpackBits(10);
+                            action.AdditionalEffect = additionalEffect;
+                        end
+    
+                        local hasSpikesEffect = (UnpackBits(1) == 1);
+                        if hasSpikesEffect then
+                            local spikesEffect = {};
+                            spikesEffect.Damage = UnpackBits(10);
+                            spikesEffect.Param = UnpackBits(14);
+                            spikesEffect.Message = UnpackBits(10);
+                            action.SpikesEffect = spikesEffect;
+                        end
+    
+                        target.Actions:append(action);
+                    end
                 end
-    
-                local hasSpikesEffect = (UnpackBits(1) == 1);
-                if hasSpikesEffect then
-                    local spikesEffect = {};
-                    spikesEffect.Damage = UnpackBits(10);
-                    spikesEffect.Param = UnpackBits(14);
-                    spikesEffect.Message = UnpackBits(10);
-                    action.SpikesEffect = spikesEffect;
-                end
-    
-                target.Actions:append(action);
+                actionPacket.Targets:append(target);
             end
-            pendingActionPacket.Targets:append(target);
-        end
-        
-        if (maxLength == 0) then
-            Error(string.format('Malformed action packet detected.  Type:$H%u$R User:$H%u$R Targets:$H%u$R', pendingActionPacket.Type, pendingActionPacket.UserId, #pendingActionPacket.Targets));
-            pendingActionPacket.Targets = T{}; --Blank targets so that it doesn't register bad info later.
         end
 
-        HandleActionPacket(pendingActionPacket);
+        if (#actionPacket.Targets > 0) and (maxLength ~= 0) then
+            HandleActionPacket(actionPacket);
+        end
     end
 end);
 
