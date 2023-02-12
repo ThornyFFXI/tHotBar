@@ -184,7 +184,7 @@ end
 local function GetStratagemData()
     local count, recast = GetStratagemCalculations();
     if (count == 0) then
-        return nil;
+        return 0, '';
     end
 
     local timer = GetRecastTimer(231);
@@ -202,7 +202,7 @@ end
 local function GetQuickDrawData()
     local data = GetAbilityTimerData(195);
     if (data.Modifier == 0) and (data.Recast == 0) then
-        return nil;
+        return 0, '';
     end
     
     local baseRecast = 60 * (120 + data.Modifier);
@@ -220,7 +220,7 @@ end
 local function GetReadyData()
     local data = GetAbilityTimerData(102);
     if (data.Modifier == 0) and (data.Recast == 0) then
-        return nil;
+        return 0, '';
     end
 
     local baseRecast = 60 * (90 + data.Modifier);
