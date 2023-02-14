@@ -50,20 +50,8 @@ function Updater:Initialize(square, binding)
     self.Square        = square;
     self.StructPointer = square.StructPointer;
 
-    self.StructPointer.Hotkey = square.Hotkey;
-    self.StructPointer.Recast = '';
-    self.StructPointer.OverlayImage1 = '';
-    self.StructPointer.OverlayImage2 = '';
-    self.StructPointer.Fade = 0;
-    self.StructPointer.Recast = '';
-    local image = GetImagePath(self.Binding.Image);
-    if (image == nil) then
-        self.StructPointer.IconImage = '';
-    else
-        self.StructPointer.IconImage = image;
-    end
-
     local layout = gInterface:GetSquareManager().Layout;
+    self.IconImage = GetImagePath(self.Binding.Image);
     self.CrossImage = layout.CrossPath;
     self.TriggerImage = layout.TriggerPath;
     
@@ -82,6 +70,24 @@ function Updater:Destroy()
 end
 
 function Updater:Tick()
+    if (gSettings.ShowHotkey) and (self.Binding.ShowHotkey) then
+        self.StructPointer.Hotkey = self.Square.Hotkey;
+    else
+        self.StructPointer.Hotkey = '';
+    end
+
+    self.StructPointer.Recast = '';
+    self.StructPointer.OverlayImage1 = '';
+    self.StructPointer.OverlayImage2 = '';
+    self.StructPointer.Fade = 0;
+    self.StructPointer.Recast = '';
+    
+    if (self.IconImage == nil) then
+        self.StructPointer.IconImage = '';
+    else
+        self.StructPointer.IconImage = self.IconImage;
+    end
+
     if (gSettings.ShowName) and (self.Binding.ShowName) then
         self.StructPointer.Name = self.Binding.Label;
     else

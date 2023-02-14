@@ -88,7 +88,7 @@ local function GetAbilityTimerData(id)
         local compId = ashita.memory.read_uint8(AbilityRecastPointer + (i * 8) + 3);
         if (compId == id) then
             return {
-                Modifier = ashita.memory.read_uint32(AbilityRecastPointer + (i * 8) + 4);
+                Modifier = ashita.memory.read_int16(AbilityRecastPointer + (i * 8) + 4);
                 Recast = ashita.memory.read_uint32(AbilityRecastPointer + (i * 4) + 0xF8);
             };
         end
@@ -100,33 +100,21 @@ local function GetAbilityTimerData(id)
     };
 end
 
---Returns the max number of stratagems and the recast time per stratagem.
-local function GetStratagemCalculations()
-    local playMgr = AshitaCore:GetMemoryManager():GetPlayer();
-    local schLevel = playMgr:GetMainJobLevel();
-    if (playMgr:GetMainJob() ~= 20) then
-        if (playMgr:GetSubJob() == 20) then
-            schLevel = playMgr:GetSubJobLevel();
+local function GetMaxStratagems()
+    -- Determine the players SCH level..
+    local player = AshitaCore:GetMemoryManager():GetPlayer();
+    local lvl = player:GetMainJobLevel();
+    if (player:GetMainJob() ~= 20) then
+        if (player:GetSubJob() == 20) then
+            lvl = player:GetSubJobLevel();
         else
-            return 0, 0;
+            return 0;
         end
     end
 
-    if (schLevel == 99) and (gPlayer:GetJobPointTotal(20) >= 550) then
-        return 5, 33 * 60;
-    elseif (schLevel >= 90) then
-        return 5, 48 * 60;
-    elseif (schLevel >= 70) then
-        return 4, 60 * 60;
-    elseif (schLevel >= 50) then
-        return 3, 80 * 60;
-    elseif (schLevel >= 30) then
-        return 2, 120 * 60;
-    else
-        return 1, 240 * 60;
-    end
+    -- Calculate max number of stratagems..
+    return math.floor((lvl - 10) / 20) + 1;
 end
-
 
 local function GetRecastTimer(timerId)
     local mmRecast  = AshitaCore:GetMemoryManager():GetRecast();
@@ -182,36 +170,31 @@ end
 --First value is number of charges available.
 --Second value is time until next charge.
 local function GetStratagemData()
-    local count, recast = GetStratagemCalculations();
-    if (count == 0) then
+    local maxCount = GetMaxStratagems();
+    if (maxCount == 0) then
         return 0, '';
     end
 
-    local timer = GetRecastTimer(231);
-    if (timer == 0) then
-        return count;
+    local data = GetAbilityTimerData(231);
+    if (data.Recast == 0) then
+        return maxCount, '';
     end
-
-    local maxRecast = count * recast;
-    local expendedRecast = maxRecast - timer;
-    local availableStratagems = math.floor(expendedRecast / recast);
-    local nextStratagem = math.fmod(timer, recast);
-    return availableStratagems, RecastToString(nextStratagem);
+    
+    local baseRecast = 60 * (240 + data.Modifier);
+    local chargeValue = baseRecast / maxCount;
+    local remainingCharges = math.floor((baseRecast - data.Recast) / chargeValue);
+    local timeUntilNextCharge = math.fmod(data.Recast, chargeValue);
+    return remainingCharges, RecastToString(timeUntilNextCharge);
 end
 
 local function GetQuickDrawData()
     local data = GetAbilityTimerData(195);
-    if (data.Modifier == 0) and (data.Recast == 0) then
-        return 0, '';
+    if (data.Recast == 0) then
+        return 2, '';
     end
     
     local baseRecast = 60 * (120 + data.Modifier);
     local chargeValue = baseRecast / 2;
-    local timer = data.Recast;
-    if timer == 0 then
-        return 2;
-    end
-
     local remainingCharges = math.floor((baseRecast - data.Recast) / chargeValue);
     local timeUntilNextCharge = math.fmod(data.Recast, chargeValue);
     return remainingCharges, RecastToString(timeUntilNextCharge);
@@ -219,17 +202,12 @@ end
 
 local function GetReadyData()
     local data = GetAbilityTimerData(102);
-    if (data.Modifier == 0) and (data.Recast == 0) then
-        return 0, '';
+    if (data.Recast == 0) then
+        return 3, '';
     end
 
     local baseRecast = 60 * (90 + data.Modifier);
     local chargeValue = baseRecast / 3;
-    local timer = data.Recast;
-    if timer == 0 then
-        return 3;
-    end
-
     local remainingCharges = math.floor((baseRecast - data.Recast) / chargeValue);
     local timeUntilNextCharge = math.fmod(data.Recast, chargeValue);
     return remainingCharges, RecastToString(timeUntilNextCharge);
@@ -248,16 +226,8 @@ function Updater:Initialize(square, binding)
     self.StructPointer = square.StructPointer;
     self.Resource      = AshitaCore:GetResourceManager():GetAbilityById(self.Binding.Id);
 
-    self.StructPointer.Hotkey = square.Hotkey;
-    self.StructPointer.OverlayImage1 = '';
-    local image = GetImagePath(self.Binding.Image);
-    if (image == nil) then
-        self.StructPointer.IconImage = '';
-    else
-        self.StructPointer.IconImage = image;
-    end
-
     local layout = gInterface:GetSquareManager().Layout;
+    self.IconImage = GetImagePath(self.Binding.Image);
     self.CrossImage = layout.CrossPath;
     self.TriggerImage = layout.TriggerPath;
     
@@ -333,6 +303,20 @@ function Updater:Tick()
     local recastReady, recastDisplay  = self.RecastFunction(self.Resource);
     local abilityAvailable            = gPlayer:KnowsAbility(self.Resource.Id);
     local abilityCostDisplay, costMet = self:CostFunction(recastReady);
+
+    if (gSettings.ShowHotkey) and (self.Binding.ShowHotkey) then
+        self.StructPointer.Hotkey = self.Square.Hotkey;
+    else
+        self.StructPointer.Hotkey = '';
+    end
+
+    self.StructPointer.OverlayImage1 = '';
+    
+    if (self.IconImage == nil) then
+        self.StructPointer.IconImage = '';
+    else
+        self.StructPointer.IconImage = self.IconImage;
+    end
 
     if (gSettings.ShowName) and (self.Binding.ShowName) then
         self.StructPointer.Name = self.Binding.Label;

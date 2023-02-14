@@ -45,6 +45,7 @@ local function WriteBinding(writer, depth, hotkey, binding)
     writer:write(string.format('%sShowTrigger             = %s,\n', pad2, binding.ShowTrigger and 'true' or 'false'));
     writer:write(string.format('%sShowSkillchainIcon      = %s,\n', pad2, binding.ShowSkillchainIcon and 'true' or 'false'));
     writer:write(string.format('%sShowSkillchainAnimation = %s,\n', pad2, binding.ShowSkillchainAnimation and 'true' or 'false'));
+    writer:write(string.format('%sShowHotkey              = %s,\n', pad2, binding.ShowHotkey and 'true' or 'false'));
     writer:write(string.format('%s},\n', pad1));
 end
 
@@ -162,6 +163,27 @@ function exposed:LoadDefaults(name, id, job)
         bindings.JobBindings.Palettes = T{
             { Name = 'Base', Bindings = T{} },
         };
+    end
+
+    --Fill in hotkey setting..
+    for _,palette in ipairs(bindings.JobBindings.Palettes) do
+        for _,binding in pairs(palette.Bindings) do
+            if (binding.Hotkey == nil) then
+                binding.Hotkey = true;
+            end
+        end
+    end
+    
+    for _,binding in pairs(bindings.JobBindings.Default) do
+        if (binding.Hotkey == nil) then
+            binding.Hotkey = true;
+        end
+    end
+    
+    for _,binding in pairs(bindings.GlobalBindings) do
+        if (binding.Hotkey == nil) then
+            binding.Hotkey = true;
+        end
     end
 
     bindings.ActivePalette = bindings.JobBindings.Palettes[1];

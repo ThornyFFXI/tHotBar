@@ -4,7 +4,6 @@ local updaters     = {
     ['Empty']       = require('updaters.empty'),
     ['Item']        = require('updaters.item'),
     ['Spell']       = require('updaters.spell'),
-    ['Test']        = require('updaters.test'),
     ['Trust']       = require('updaters.trust'),
     ['Weaponskill'] = require('updaters.weaponskill'),
 };

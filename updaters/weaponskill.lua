@@ -51,16 +51,8 @@ function Updater:Initialize(square, binding)
     self.StructPointer = square.StructPointer;
     self.Resource      = AshitaCore:GetResourceManager():GetAbilityById(self.Binding.Id);
 
-    self.StructPointer.Hotkey = square.Hotkey;
-    local image = GetImagePath(self.Binding.Image);
-    if (image == nil) then
-        self.DefaultIcon = '';
-    else
-        self.DefaultIcon = image;
-    end
-    self.StructPointer.Recast = '';
-
     local layout = gInterface:GetSquareManager().Layout;
+    self.IconImage = GetImagePath(self.Binding.Image);
     self.CrossImage = layout.CrossPath;
     self.TriggerImage = layout.TriggerPath;
     self.AnimationIndex = 1;
@@ -107,6 +99,20 @@ end
 function Updater:Tick()
     local known = gPlayer:KnowsAbility(self.Resource.Id);
     local activeSkillchain = self:UpdateSkillchain();
+    
+    if (gSettings.ShowHotkey) and (self.Binding.ShowHotkey) then
+        self.StructPointer.Hotkey = self.Square.Hotkey;
+    else
+        self.StructPointer.Hotkey = '';
+    end
+
+    self.StructPointer.Recast = '';
+    
+    if (self.IconImage == nil) then
+        self.StructPointer.IconImage = '';
+    else
+        self.StructPointer.IconImage = self.IconImage;
+    end
 
     if (gSettings.ShowName) and (self.Binding.ShowName) then
         self.StructPointer.Name = self.Binding.Label;

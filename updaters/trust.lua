@@ -77,16 +77,8 @@ function Updater:Initialize(square, binding)
     self.StructPointer = square.StructPointer;
     self.Resource      = AshitaCore:GetResourceManager():GetSpellById(self.Binding.Id);
 
-    self.StructPointer.Hotkey = square.Hotkey;
-    self.StructPointer.OverlayImage1 = '';
-    local image = GetImagePath(self.Binding.Image);
-    if (image == nil) then
-        self.StructPointer.IconImage = '';
-    else
-        self.StructPointer.IconImage = image;
-    end
-
     local layout = gInterface:GetSquareManager().Layout;
+    self.IconImage = GetImagePath(self.Binding.Image);
     self.CrossImage = layout.CrossPath;
     self.TriggerImage = layout.TriggerPath;
     
@@ -108,7 +100,21 @@ function Updater:Tick()
     --RecastReady will hold number of charges for charged abilities.
     local recastReady, recastDisplay  = GetSpellRecast(self.Resource);
     local spellKnown                  = gPlayer:KnowsSpell(self.Resource.Index)
-    local spellCostDisplay, costMet   = self:CostFunction();
+    local spellCostDisplay, costMet   = self:CostFunction();    
+
+    if (gSettings.ShowHotkey) and (self.Binding.ShowHotkey) then
+        self.StructPointer.Hotkey = self.Square.Hotkey;
+    else
+        self.StructPointer.Hotkey = '';
+    end
+
+    self.StructPointer.OverlayImage1 = '';
+    
+    if (self.IconImage == nil) then
+        self.StructPointer.IconImage = '';
+    else
+        self.StructPointer.IconImage = self.IconImage;
+    end
 
     if (gSettings.ShowName) and (self.Binding.ShowName) then
         self.StructPointer.Name = self.Binding.Label;

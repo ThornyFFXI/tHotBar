@@ -473,7 +473,7 @@ function exposed:Render()
                         width = layout.ImageObjects.Icon.Width;
                         height = layout.ImageObjects.Icon.Height;
                     end
-                    imgui.BeginChild('AppearanceChild', { 253, 210 + height }, true);
+                    imgui.BeginChild('AppearanceChild', { 253, 235 + height }, true);
                     imgui.TextColored(header, 'Image');
                     imgui.ShowHelp('While the image file and size are correct, rendering here is done with ImGui instead of GdiPlus and may vary slightly in appearance.');
                     local posY = imgui.GetCursorPosY();
@@ -501,6 +501,8 @@ function exposed:Render()
                         imgui.ShowHelp('Fades the icon for actions where cooldown is not 0 or cost is not met.');
                         CheckBox('Recast');
                         imgui.ShowHelp('Shows action recast timers.');
+                        CheckBox('Hotkey');
+                        imgui.ShowHelp('Shows hotkey label.');
                         imgui.EndGroup();
                         imgui.SameLine();
                         imgui.BeginGroup();
@@ -609,6 +611,7 @@ function exposed:Render()
                     binding.ShowTrigger = state.Components.Trigger;
                     binding.ShowSkillchainIcon = state.Components.SkillchainIcon;
                     binding.ShowSkillchainAnimation = state.Components.SkillchainAnimation;
+                    binding.ShowHotkey = state.Components.Hotkey;
                     if (state.Indices.Scope == 1) then
                         gBindings:BindGlobal(state.Hotkey, binding);
                     elseif (state.Indices.Scope == 2) then
@@ -646,6 +649,7 @@ function exposed:Show(hotkey, binding)
                 Trigger = true,
                 SkillchainIcon = true,
                 SkillchainAnimation = true,
+                Hotkey = true,
             },
             Indices = {
                 ['Scope'] = 3,
@@ -676,7 +680,8 @@ function exposed:Show(hotkey, binding)
             Name = binding.ShowName,
             Trigger = binding.ShowTrigger,
             SkillchainIcon = binding.ShowSkillchainIcon,
-            SkillchainAnimation = binding.ShowSkillchainAnimation
+            SkillchainAnimation = binding.ShowSkillchainAnimation,
+            Hotkey = binding.ShowHotkey,
         },
         Indices = {
             ['Scope'] = binding.Scope

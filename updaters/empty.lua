@@ -12,15 +12,6 @@ function Updater:Initialize(square, binding)
     self.Square        = square;
     self.StructPointer = square.StructPointer;
 
-    self.StructPointer.Fade = 0;
-    self.StructPointer.Cost = '';
-    self.StructPointer.Hotkey = square.Hotkey;
-    self.StructPointer.Name = '';
-    self.StructPointer.Recast = '';
-    self.StructPointer.OverlayImage1 = '';
-    self.StructPointer.OverlayImage2 = '';
-    self.StructPointer.OverlayImage3 = '';
-    self.StructPointer.IconImage = '';
 end
 
 function Updater:Destroy()
@@ -28,7 +19,20 @@ function Updater:Destroy()
 end
 
 function Updater:Tick()
-    
+    if (gSettings.ShowHotkey) then
+        self.StructPointer.Hotkey = self.Square.Hotkey;
+    else
+        self.StructPointer.Hotkey = '';
+    end
+
+    self.StructPointer.Fade = 0;
+    self.StructPointer.Cost = '';
+    self.StructPointer.Name = '';
+    self.StructPointer.Recast = '';
+    self.StructPointer.OverlayImage1 = '';
+    self.StructPointer.OverlayImage2 = '';
+    self.StructPointer.OverlayImage3 = '';
+    self.StructPointer.IconImage = '';
 end
 
 return Updater;

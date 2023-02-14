@@ -77,6 +77,7 @@ local defaultSettings = T{
     ShowCost = true,
     ShowCross = true,
     ShowFade = true,
+    ShowHotkey = true,
     ShowName = true,
     ShowRecast = true,
     ShowSkillchainIcon = true,

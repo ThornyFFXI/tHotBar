@@ -78,7 +78,9 @@ function exposed:Render()
             CheckBox('Fade', 'ShowFade');
             imgui.ShowHelp('Fades the icon for actions where cooldown is not 0 or cost is not met.');
             CheckBox('Recast', 'ShowRecast');
-            imgui.ShowHelp('Shows action recast timers.');                
+            imgui.ShowHelp('Shows action recast timers.');     
+            CheckBox('Hotkey', 'ShowHotkey');
+            imgui.ShowHelp('Shows hotkey labels.');                
             imgui.EndGroup();
             imgui.SameLine();
             imgui.BeginGroup();

@@ -100,16 +100,6 @@ function Updater:Initialize(square, binding)
     self.StructPointer = square.StructPointer;
     self.Resource      = AshitaCore:GetResourceManager():GetItemById(self.Binding.Id);
 
-    self.StructPointer.Hotkey = square.Hotkey;
-    self.StructPointer.OverlayImage1 = '';
-    self.StructPointer.OverlayImage2 = '';
-    local image = GetImagePath(self.Binding.Image);
-    if (image == nil) then
-        self.StructPointer.IconImage = '';
-    else
-        self.StructPointer.IconImage = image;
-    end
-
     if (bit.band(self.Resource.Flags, 0x800) ~= 0) then
         self.RecastFunction = GetEquipmentRecast:bind1(self.Resource);
     else
@@ -117,6 +107,7 @@ function Updater:Initialize(square, binding)
     end
 
     local layout = gInterface:GetSquareManager().Layout;
+    self.IconImage = GetImagePath(self.Binding.Image);
     self.CrossImage = layout.CrossPath;
     self.TriggerImage = layout.TriggerPath;
 end
@@ -127,6 +118,21 @@ end
 
 function Updater:Tick()
     local count, recastTimer = self.RecastFunction();
+
+    if (gSettings.ShowHotkey) and (self.Binding.ShowHotkey) then
+        self.StructPointer.Hotkey = self.Square.Hotkey;
+    else
+        self.StructPointer.Hotkey = '';
+    end
+
+    self.StructPointer.OverlayImage1 = '';
+    self.StructPointer.OverlayImage2 = '';
+    
+    if (self.IconImage == nil) then
+        self.StructPointer.IconImage = '';
+    else
+        self.StructPointer.IconImage = self.IconImage;
+    end
 
     if (gSettings.ShowName) and (self.Binding.ShowName) then
         self.StructPointer.Name = self.Binding.Label;
