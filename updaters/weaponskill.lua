@@ -129,8 +129,6 @@ function Updater:Tick()
     if (gSettings.ShowSkillchainIcon) and (self.Binding.ShowSkillchainIcon) then
         if (activeSkillchain) then
             self.StructPointer.IconImage = self.SkillchainIcon;
-        else
-            self.StructPointer.IconImage = self.DefaultIcon;
         end
     end
 
