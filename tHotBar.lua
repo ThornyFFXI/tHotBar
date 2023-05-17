@@ -21,7 +21,7 @@
 
 addon.name      = 'tHotBar';
 addon.author    = 'Thorny';
-addon.version   = '1.14';
+addon.version   = '1.15';
 addon.desc      = 'Displays macros as visible and clickable elements.';
 addon.link      = 'https://ashitaxi.com/';
 
@@ -75,10 +75,6 @@ ashita.events.register('command', 'command_cb', function (e)
     if (#args > 1) and (string.lower(args[2]) == 'palette') then
         gBindings:HandleCommand(args);
         return;
-    end
-
-    if (gInterface ~= nil) then
-        gInterface:Initialize(args[2]);
     end
 end);
 
