@@ -428,6 +428,10 @@ end
 
 local exposed = {};
 
+function exposed:IsOpen()
+    return (state.IsOpen[1] == true);
+end
+
 function exposed:Render()
     if (state.IsOpen[1]) then
         if (imgui.Begin(string.format('%s v%s Binding', addon.name, addon.version), state.IsOpen, ImGuiWindowFlags_AlwaysAutoResize)) then

@@ -10,6 +10,14 @@ ashita.events.register('mouse', 'mouse_cb', function (e)
     if (e.blocked) then
         return;
     end
+
+    if gConfigGUI:IsOpen() then
+        return;
+    end
+
+    if gBindingGUI:IsOpen() then
+        return;
+    end
     
     local manager = gInterface:GetSquareManager();
 

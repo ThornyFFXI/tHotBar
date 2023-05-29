@@ -21,7 +21,7 @@
 
 addon.name      = 'tHotBar';
 addon.author    = 'Thorny';
-addon.version   = '1.15';
+addon.version   = '1.16';
 addon.desc      = 'Displays macros as visible and clickable elements.';
 addon.link      = 'https://ashitaxi.com/';
 
