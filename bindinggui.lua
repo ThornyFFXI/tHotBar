@@ -724,7 +724,7 @@ function exposed:Show(hotkey, binding)
 
             state.Combos.Action = T{};
             for _,res in ipairs(state.ActionResources) do
-                state.Combos.Action:append(res.Name[1]);
+                state.Combos.Action:append(encoding:ShiftJIS_To_UTF8(res.Name[1]));
             end
         end
         
@@ -746,7 +746,7 @@ function exposed:Show(hotkey, binding)
 
             state.Combos.Action = T{};
             for _,res in ipairs(state.ActionResources) do
-                state.Combos.Action:append(res.Name[1]);
+                state.Combos.Action:append(encoding:ShiftJIS_To_UTF8(res.Name[1]));
             end
         end
         
@@ -771,13 +771,14 @@ function exposed:Show(hotkey, binding)
                 local prev = state.ActionResources[index - 1];
                 local next = state.ActionResources[index + 1];
         
+                local name = encoding:ShiftJIS_To_UTF8(res.Name[1]);
                 --Show item id if multiple matching items..
-                if (prev) and (prev.Name[1] == res.Name[1]) then
-                    state.Combos.Action:append(string.format('%s[%u]', res.Name[1], res.Id));            
-                elseif (next) and (next.Name[1] == res.Name[1]) then
-                    state.Combos.Action:append(string.format('%s[%u]', res.Name[1], res.Id));
+                if (prev) and (prev.Name[1] == name) then
+                    state.Combos.Action:append(string.format('%s[%u]', name, res.Id));            
+                elseif (next) and (next.Name[1] == name) then
+                    state.Combos.Action:append(string.format('%s[%u]', name, res.Id));
                 else
-                    state.Combos.Action:append(res.Name[1]);
+                    state.Combos.Action:append(name);
                 end
             end
         end
