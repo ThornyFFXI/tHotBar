@@ -1,5 +1,7 @@
 local Updater = {};
 
+local inventory = require('state.inventory');
+
 local function ItemCost(updater, items)
     local containers = updater.Containers;
     if (updater.Containers == nil) then
@@ -25,11 +27,11 @@ local function ItemCost(updater, items)
 
     local itemCount = 0;
     for _,item in ipairs(items) do
-        local itemData = gInventory:GetItemData(item);
+        local itemData = inventory:GetItemData(item);
         if (itemData ~= nil) then
             for _,itemEntry in ipairs(itemData.Locations) do
                 if (updater.Containers:contains(itemEntry.Container)) then
-                    itemCount = itemCount + gInventory:GetItemTable(itemEntry.Container, itemEntry.Index).Count;
+                    itemCount = itemCount + inventory:GetItemTable(itemEntry.Container, itemEntry.Index).Count;
                 end
             end
         end
@@ -45,19 +47,11 @@ function Updater:New()
     return o;
 end
 
-function Updater:Initialize(square, binding)
-    self.Binding       = binding;
-    self.Square        = square;
-    self.StructPointer = square.StructPointer;
-
-    local layout = gInterface:GetSquareManager().Layout;
-    self.IconImage = GetImagePath(self.Binding.Image);
-    self.CrossImage = layout.CrossPath;
-    self.TriggerImage = layout.TriggerPath;
+function Updater:Initialize(element, binding)
+    self.State = element.State;
     
-    --Custom
-    if (self.Binding.CostOverride) then
-        self.CostFunction = ItemCost:bind2(self.Binding.CostOverride);
+    if (binding.CostOverride) then
+        self.CostFunction = ItemCost:bind2(binding.CostOverride);
     else
         self.CostFunction = function()
             return '', true;
@@ -70,41 +64,11 @@ function Updater:Destroy()
 end
 
 function Updater:Tick()
-    if (gSettings.ShowHotkey) and (self.Binding.ShowHotkey) then
-        self.StructPointer.Hotkey = self.Square.Hotkey;
-    else
-        self.StructPointer.Hotkey = '';
-    end
-
-    self.StructPointer.Recast = '';
-    self.StructPointer.OverlayImage1 = '';
-    self.StructPointer.OverlayImage2 = '';
-    self.StructPointer.Fade = 0;
-    self.StructPointer.Recast = '';
-    
-    if (self.IconImage == nil) then
-        self.StructPointer.IconImage = '';
-    else
-        self.StructPointer.IconImage = self.IconImage;
-    end
-
-    if (gSettings.ShowName) and (self.Binding.ShowName) then
-        self.StructPointer.Name = self.Binding.Label;
-    else
-        self.StructPointer.Name = '';
-    end
-
-    if (gSettings.ShowCost) and (self.Binding.ShowCost) then
-        self.StructPointer.Cost = self:CostFunction();
-    end
-
-    if (gSettings.ShowTrigger) and (self.Binding.ShowTrigger) then
-        if (self.Square.Activation > os.clock()) then
-            self.StructPointer.OverlayImage3 = self.TriggerImage;
-        else
-            self.StructPointer.OverlayImage3 = '';
-        end
-    end
+    self.State.Available = true;
+    self.State.Cost = self:CostFunction();
+    self.State.Ready = true;
+    self.State.Recast = '';
+    self.State.Skillchain = nil;
 end
 
 return Updater;

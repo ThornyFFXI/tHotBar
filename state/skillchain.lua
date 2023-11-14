@@ -19,6 +19,26 @@ local Resonation = {
     Radiance = 17,
     Umbra = 18
 };
+local names = {
+    'Liquefaction',
+    'Induration',
+    'Detonation',
+    'Scission',
+    'Impaction',
+    'Reverberation',
+    'Transfixion',
+    'Compression',
+    'Fusion',
+    'Gravitation',
+    'Distortion',
+    'Fragmentation',
+    'Light',
+    'Darkness',
+    'Light',
+    'Darkness',
+    'Light',
+    'Darkness',
+};
 
 local possibleSkillchains = {
     { Resonation.Light, Resonation.Light, Resonation.Light },
@@ -633,6 +653,10 @@ function exposed:GetSkillchain(targetIndex, weaponskillId)
     if not resonation then
         return;
     end
+    if (os.clock() > resonation.WindowClose) then
+        resonationMap[targetIndex] = nil;
+        return;
+    end
 
     local wsAttributes = weaponskillResonationMap[weaponskillId];
     if not wsAttributes then
@@ -642,12 +666,58 @@ function exposed:GetSkillchain(targetIndex, weaponskillId)
     for _,sc in ipairs(possibleSkillchains) do
         if (resonation.Attributes:contains(sc[2])) then
             if wsAttributes:contains(sc[3]) then
-                return resonation, sc[1];
+                return resonation, names[sc[1]];
             end
         end
     end
 
     return;
+end
+
+function exposed:GetSkillchainBySpell(targetIndex, spellId)
+    local buffId;
+    local spellAttributes = immanenceResonationMap[spellId];
+    if spellAttributes then
+        buffId = 470;
+    else
+        spellAttributes = chainAffinityResonationMap[spellId];
+        if spellAttributes then
+            buffId = 164;
+        end
+    end
+    if not buffId then
+        return;
+    end
+    
+    local buffActive = false;
+    local buffs = AshitaCore:GetMemoryManager():GetPlayer():GetStatusIcons();
+    for i = 1,32 do
+        if (buffs[i] == buffId) then
+            buffActive = true;
+            break;
+        end
+    end
+
+    if not buffActive then
+        return;
+    end
+
+    local resonation = resonationMap[targetIndex];
+    if not resonation then
+        return;
+    end
+    if (os.clock() > resonation.WindowClose) then
+        resonationMap[targetIndex] = nil;
+        return;
+    end
+
+    for _,sc in ipairs(possibleSkillchains) do
+        if (resonation.Attributes:contains(sc[2])) then
+            if spellAttributes:contains(sc[3]) then
+                return resonation, names[sc[1]];
+            end
+        end
+    end
 end
 
 return exposed;
