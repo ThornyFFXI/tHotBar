@@ -170,16 +170,6 @@ local layout = {
         Easier to fill in OffsetX and OffsetY with iteration(see end of file).
     ]]--
     Elements = T{
-        { DefaultMacro = '1' },
-        { DefaultMacro = '2' },
-        { DefaultMacro = '3' },
-        { DefaultMacro = '4' },
-        { DefaultMacro = '5' },
-        { DefaultMacro = '6' },
-        { DefaultMacro = '7' },
-        { DefaultMacro = '8' },
-        { DefaultMacro = '9' },
-        { DefaultMacro = '0' },
         { DefaultMacro = '^1' },
         { DefaultMacro = '^2' },
         { DefaultMacro = '^3' },
@@ -190,6 +180,16 @@ local layout = {
         { DefaultMacro = '^8' },
         { DefaultMacro = '^9' },
         { DefaultMacro = '^0' },
+        { DefaultMacro = '!1' },
+        { DefaultMacro = '!2' },
+        { DefaultMacro = '!3' },
+        { DefaultMacro = '!4' },
+        { DefaultMacro = '!5' },
+        { DefaultMacro = '!6' },
+        { DefaultMacro = '!7' },
+        { DefaultMacro = '!8' },
+        { DefaultMacro = '!9' },
+        { DefaultMacro = '!0' },
     },
 };
 

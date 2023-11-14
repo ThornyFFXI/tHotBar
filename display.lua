@@ -10,6 +10,14 @@ local function IsControlPressed()
     return (bit.band(ffi.C.GetKeyState(0x11), 0x8000) ~= 0);
 end
 
+local modifiers = T{
+    ['%!'] = 'alt',
+    ['%^'] = 'ctrl',
+    ['%@'] = 'win',
+    ['%#'] = 'apps',
+    ['%+'] = 'shift'
+};
+
 local function bind(hotkey, index)
     local defaults = {
         alt = false,
@@ -59,12 +67,14 @@ local Display = { Valid = false };
 
 function Display:Destroy()
     self.Layout = nil;
-    local bindSetting = AshitaCore:GetInputManager():GetKeyboard():GetSilentBinds();
-    AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(true);
-    for _,element in ipairs(self.Elements) do
-        unbind(element.State.Hotkey);
+    if type(self.Elements) == 'table' then
+        local bindSetting = AshitaCore:GetInputManager():GetKeyboard():GetSilentBinds();
+        AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(true);
+        for _,element in ipairs(self.Elements) do
+            unbind(element.State.Hotkey);
+        end
+        AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(bindSetting);
     end
-    AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(bindSetting);
     self.Elements = T{};
     self.Valid = false;
 end
