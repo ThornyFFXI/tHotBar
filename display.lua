@@ -10,10 +10,61 @@ local function IsControlPressed()
     return (bit.band(ffi.C.GetKeyState(0x11), 0x8000) ~= 0);
 end
 
+local function bind(hotkey, index)
+    local defaults = {
+        alt = false,
+        ctrl = false,
+        win = false,
+        apps = false,
+        shift =  false
+    };
+
+    local working = hotkey;
+    for key,entry in pairs(modifiers) do
+        local newString = string.gsub(working, key, '');
+        if (newString ~= working) then
+            defaults[entry] = true;
+            working = newString;
+        end
+    end
+
+    local kb = AshitaCore:GetInputManager():GetKeyboard();
+    kb:Bind(kb:S2D(string.sub(working, 1, 1)), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win,
+    string.format('/tb activate %u', index));
+end
+
+local function unbind(hotkey)
+    local defaults = {
+        alt = false,
+        ctrl = false,
+        win = false,
+        apps = false,
+        shift =  false
+    };
+
+    local working = hotkey;
+    for key,entry in pairs(modifiers) do
+        local newString = string.gsub(working, key, '');
+        if (newString ~= working) then
+            defaults[entry] = true;
+            working = newString;
+        end
+    end
+
+    local kb = AshitaCore:GetInputManager():GetKeyboard();
+    kb:Unbind(kb:S2D(working[1]), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win);
+end
+
 local Display = { Valid = false };
 
 function Display:Destroy()
     self.Layout = nil;
+    local bindSetting = AshitaCore:GetInputManager():GetKeyboard():GetSilentBinds();
+    AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(true);
+    for _,element in ipairs(self.Elements) do
+        unbind(element.State.Hotkey);
+    end
+    AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(bindSetting);
     self.Elements = T{};
     self.Valid = false;
 end
@@ -24,13 +75,17 @@ function Display:Initialize(layout)
 
     local position = gSettings.Position;
 
-    for _,data in ipairs(layout.Elements) do        
+    local bindSetting = AshitaCore:GetInputManager():GetKeyboard():GetSilentBinds();
+    AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(true);
+    for _,data in ipairs(layout.Elements) do
         local newElement = Element:New(data.DefaultMacro, layout);
         newElement.OffsetX = data.OffsetX;
         newElement.OffsetY = data.OffsetY;
         newElement:SetPosition(position);
         self.Elements:append(newElement);
+        bind(data.DefaultMacro, #self.Elements);
     end
+    AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(bindSetting);
 
     if (self.Sprite == nil) then
         local sprite = ffi.new('ID3DXSprite*[1]');

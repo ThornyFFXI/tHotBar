@@ -59,5 +59,6 @@ end);
 * desc : Event called when the addon is being unloaded.
 --]]
 ashita.events.register('unload', 'unload_cb', function ()
+    gDisplay:Destroy();
     gdi:destroy_interface();
 end);
