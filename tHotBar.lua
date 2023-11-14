@@ -49,7 +49,7 @@ end
 
 ashita.events.register('load', 'load_cb', function ()
     gdi:set_auto_render(false);
-    gInitializer     = require('initializer');
+    gInitializer = require('initializer');
     require('callbacks');
     require('commands');
 end);
@@ -60,31 +60,4 @@ end);
 --]]
 ashita.events.register('unload', 'unload_cb', function ()
     gdi:destroy_interface();
-end);
-
-
-ashita.events.register('command', 'command_cb', function (e)
-    local args = e.command:args();
-    if (#args == 0 or string.lower(args[1]) ~= '/tb') then
-        return;
-    end
-    e.blocked = true;
-
-    if (#args == 1) then
-        gConfigGUI:Show();
-        return;
-    end
-
-    if (#args > 1) and (string.lower(args[2]) == 'activate') then
-        if (#args > 2) then
-            local macroIndex = tonumber(args[3]);
-            gInterface:GetSquareManager():Activate(macroIndex);
-        end
-        return;
-    end
-
-    if (#args > 1) and (string.lower(args[2]) == 'palette') then
-        gBindings:HandleCommand(args);
-        return;
-    end
 end);

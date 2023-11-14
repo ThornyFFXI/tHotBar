@@ -81,8 +81,7 @@ local function WriteJob(jobBindings)
 end
 
 local function ApplyBindings()
-    local squareManager = gInterface:GetSquareManager();
-    if (squareManager == nil) then
+    if (gDisplay == nil) then
         return;
     end
 
@@ -106,7 +105,7 @@ local function ApplyBindings()
         end
     end
 
-    squareManager:UpdateBindings(output);
+    gDisplay:UpdateBindings(output);
 end
 
 local exposed = {};
@@ -211,6 +210,19 @@ function exposed:BindPalette(hotkey, binding)
     bindings.ActivePalette.Bindings[hotkey] = binding;
     WriteJob();
     ApplyBindings();
+end
+
+function exposed:GetDisplayText()
+    if (bindings.ActivePalette == nil) then
+        return;
+    end
+    
+    local paletteCount = #bindings.JobBindings.Palettes;
+    if (paletteCount == 1) then
+        return bindings.ActivePalette.Name;
+    else
+        return string.format ('%s (%u/%u)', bindings.ActivePalette.Name, bindings.ActivePaletteIndex, paletteCount);
+    end
 end
 
 function exposed:HandleCommand(args)
