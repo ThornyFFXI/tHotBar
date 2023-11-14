@@ -132,7 +132,6 @@ function Initializer:ApplyLayout()
     gDisplay:Destroy();
 
     local layout = LoadFile_s(GetResourcePath('layouts/' .. gSettings.Layout));
-    print(gSettings.Layout);
     if layout then
         PrepareLayout(layout, gSettings.Scale);
         local position = gSettings.Position;
