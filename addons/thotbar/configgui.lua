@@ -174,6 +174,10 @@ function exposed:Render()
             imgui.End();
         end
     end
+
+    if (state.IsOpen[1] == false) then
+        gDisplay.AllowDrag = false;
+    end
 end
 
 function exposed:Show()
