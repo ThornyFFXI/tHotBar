@@ -224,7 +224,7 @@ function Display:HandleMouse(e)
         if hitElement then
             if IsControlPressed() then
                 gBindingGUI:Show(hitElement.State.Hotkey, hitElement.Binding);
-            else
+            elseif (gSettings.ClickToActivate) then
                 hitElement:Activate();
             end
             e.blocked = true;
