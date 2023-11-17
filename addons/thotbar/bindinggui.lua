@@ -551,12 +551,12 @@ function exposed:Render()
                     imgui.EndTabItem();
                 end
                 if imgui.BeginTabItem('Appearance##AppearanceTab', nil) then
-                    local layout = gInterface:GetLayout();
+                    local layout = gDisplay.Layout;
                     local width = 32;
                     local height = 32;
                     if layout then
-                        width = layout.ImageObjects.Icon.Width;
-                        height = layout.ImageObjects.Icon.Height;
+                        width = layout.Icon.Width;
+                        height = layout.Icon.Height;
                     end
                     imgui.BeginChild('AppearanceChild', { 253, 235 + height }, true);
                     imgui.TextColored(header, 'Image');
