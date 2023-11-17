@@ -2,14 +2,10 @@
 tHotBar is an interface for binding and visualizing macros more easily.  It uses visual elements to display as much information as possible, and is highly customizable in appearance.
 
 ## How To Install
-Download the release zip for the Ashita client version you are currently using.  Extract directly to your Ashita directory(the folder with ashita-cli.exe in it!).  Everything should fall into place.  If you feel you've messed that up, the required components are a plugin named 'tRenderer.dll' in your plugins folder, and a folder named 'tHotBar' in your addons folder.  If you need to build tRenderer yourself for a different client version, or simply don't trust foreign dlls, you can access the source at:<br>
-https://github.com/ThornyFFXI/tRenderer
-
-## How To Load
-You must load the plugin tRenderer with **/load trenderer** prior to loading the addon tHotBar with **/addon load tHotBar**.  If you place these in your autoload file, you must ensure that both addons itself and trenderer are loaded prior to loading tHotBar.
+Download the release zip.  Extract directly to your Ashita directory(the folder with ashita-cli.exe in it!).  Everything should fall into place.  **tRenderer is no longer a part of tHotBar.  You can just load the addon now.**<br>
 
 ## How To Use
-Upon initial login, you can type **/tb** to open a configuration window and choose the layout and options that best fit your needs.  The GUI makes this very straightforward.  At present, tHotBar ships with ~500p wide, ~750p wide, and ~1000p layouts, each with a 10x2 or 10x3 macro option.  Once you are satisfied with your layout, you can hold ctrl and click any of the squares to make the binding menu appear for that square.  All bindings are automatically saved as soon as you bind them, and palette/job bindings are automatically loaded when you change to that job.
+Upon initial login, you can type **/tb** to open a configuration window and choose the layout and options that best fit your needs.  You can use the scale slider to make the display larger or smaller, but you must click apply each time you change it to preview the change.  To reposition the display manually, click the 'allow drag' button and a blue handle will appear on the top left of the display, which you can click and drag to move the entire display.  Once you are satisfied with your layout, you can hold ctrl and click any of the squares to make the binding menu appear for that square.  All bindings are automatically saved as soon as you bind them, and palette/job bindings are automatically loaded when you change to that job.
 
 ## Binding Scope
 Most of the options in the binding menu are self-explanatory, but scope may need a little further explanation.  When building your active macro set, tHotBar will first look at your current palette and fill all squares it contains.  Then, if you have any empty squares, tHotBar will look at your job bindings and fill them as able.  Finally, it will look at your global bindings and fill as able.  So, if you bind something to global, that slot will show up on all jobs and palettes until you override it with a job-specific or palette-specific macro.  If you bind something to job, it will show up on all palettes for that job until you override it with a palette-specific macro.
@@ -47,7 +43,7 @@ You can create this directory if it does not yet exist.  All image bindings will
 **Ashita/config/addons/tHotBar/resources/abilities/16.png**<br>
 and you would enter the binding as:<br>
 **abilities/16.png**<br>
-You can also use the game's item resources directly, as tHotBar will do when binding items.  To do this, simply enter the binding as **ITEM:28540** using the item id.  This can be found on FFXIAH.com or many other places.  This example would show a warp ring.
+You can also use the game's item resources directly, as tHotBar will do when binding items.  To do this, simply enter the binding as **ITEM:28540** using the item id.  This can be found on FFXIAH.com or many other places.  This example would show a warp ring.  Status resources are supported similarly, using the notation **STATUS:##** with the status ID.
 
 ## Custom Layouts
 If you want to adjust the layouts, the same thing applies!  Copy the included layout from:<br>
@@ -65,4 +61,11 @@ tHotBar uses ashita binds to register keyboard input.  That means if you have a 
 ## FAQ
 ### You do know people are going to skip the caps and call this thot bar, right?<br>
 Yes, that's ok.
+
+### My settings reset when installing 2.0+.<br>
+This is expected.  Settings, as configured through the '/tb' window, have been overhauled enough to be incompatible.  You will need to configure them again.  Note that bindings, your actual macros, will always remain compatible.
+
+### tHotBar crashes with a random error after upgrading to 2.0+.<br>
+Make sure you don't have any customized layouts from pre-2.0 in **Ashita/addons/tHotBar/resources/layouts**.  Layouts from prior to 2.0 are not compatible with 2.0+.
+
 #### More to come as common questions arise.
