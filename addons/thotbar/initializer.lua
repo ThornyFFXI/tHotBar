@@ -159,8 +159,5 @@ settings.register('settings', 'settings_update', function(newSettings)
 end);
 
 Initializer:ApplyLayout();
-if (gDisplay) then
-    gBindings:Update();
-end
 
 return Initializer;

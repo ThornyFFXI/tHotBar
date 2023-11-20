@@ -111,6 +111,10 @@ function Display:Initialize(layout)
     obj.OffsetX = self.Layout.Palette.OffsetX;
     obj.OffsetY = self.Layout.Palette.OffsetY;
     self.PaletteDisplay = obj;
+
+    if (self.Valid) then
+        gBindings:Update();
+    end
 end
 
 function Display:Activate(index)
