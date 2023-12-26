@@ -24,6 +24,9 @@ This will add a palette on your current job.
 **/tb palette remove [required: name]**
 This will delete a palette from your current job.  There is no way to recover bindings after doing this.
 
+**/tb palette rename [required: old name] [required: new name]**
+This will rename a palette, while preserving it's place in the order and bindings.
+
 **/tb palette list**
 This will print a list of palettes for your current job.
 
@@ -35,6 +38,9 @@ Change to next palette.
 
 **/tb palette previous**
 Change to previous palette.
+
+**/tb palette last**
+Change to the last palette to be active prior to the current one.
 
 ## Custom Icons
 The binding menu allows you to enter an image path to use your own images for any ability you want.  If you want to replace existing icons, or add new icons, you should do so by adding them to the directory:<br>

@@ -7,6 +7,7 @@ local bindings = {
 };
 bindings.ActivePalette = bindings.JobBindings.Palettes[1];
 bindings.ActivePaletteIndex = 1;
+bindings.LastPaletteIndex = 1;
 
 local function WriteBinding(writer, depth, hotkey, binding)
     local pad1 = string.rep(' ', depth);
@@ -121,6 +122,7 @@ function exposed:LoadDefaults(name, id, job)
         };
         bindings.ActivePalette = bindings.JobBindings.Palettes[1];
         bindings.ActivePaletteIndex = 1;
+        bindings.LastPaletteIndex = 1;
         ApplyBindings();
         return;
     end
@@ -187,6 +189,7 @@ function exposed:LoadDefaults(name, id, job)
 
     bindings.ActivePalette = bindings.JobBindings.Palettes[1];
     bindings.ActivePaletteIndex = 1;
+    bindings.LastPaletteIndex = 1;
     ApplyBindings();
 end
 
@@ -247,33 +250,62 @@ function exposed:HandleCommand(args)
         
         local newPalette = { Name = args[4], Bindings = T{} };
         bindings.JobBindings.Palettes:append(newPalette);
+        bindings.LastPaletteIndex = bindings.ActivePaletteIndex;
         bindings.ActivePalette = newPalette;
         bindings.ActivePaletteIndex = #bindings.JobBindings.Palettes;
         ApplyBindings();
         Message('Created palette!');
+        WriteJob();
     elseif (cmd == 'remove') then
         if (args[4] == nil) then
             Error('Command Syntax: $H/tb palette remove [name]$R.');
             return;
         end
-        local paletteName = string.lower(args[4]);
-        if (paletteName == 'base') then
-            Error('Cannot remove base palette.');
+        if (#bindings.JobBindings.Palettes == 1) then
+            Error('Cannot remove last palette.');
             return;
         end
+        local paletteName = string.lower(args[4]);
         for index,palette in ipairs(bindings.JobBindings.Palettes) do
             if (string.lower(palette.Name) == paletteName) then
                 table.remove(bindings.JobBindings.Palettes, index);
                 if (index == bindings.ActivePaletteIndex) then
                     bindings.ActivePalette = bindings.JobBindings.Palettes[1];
                     bindings.ActivePaletteIndex = 1;
+                    bindings.LastPaletteIndex = 1;
                     ApplyBindings();
                 end
                 Message('Removed palette!');
+                WriteJob();
                 return;
             end
         end
         Error('Could not find palette to remove.');
+    elseif (cmd == 'rename') then
+        if (args[4] == nil) or (args[5] == nil) then
+            Error('Command Syntax: $H/tb palette rename [old name] [new name]$R.');
+            return;
+        end
+        local paletteName = string.lower(args[4]);
+        local newNameLower = string.lower(args[5]);
+        local targetPalette;
+        for index,palette in ipairs(bindings.JobBindings.Palettes) do
+            local lower = string.lower(palette.Name);
+            if (lower == paletteName) then
+                targetPalette = palette;
+            elseif (lower == newNameLower) then
+                Error('A palette with that name already exists.');
+                return;
+            end
+        end
+
+        if targetPalette then
+            targetPalette.Name = args[5];
+            Message('Renamed palette!');
+            WriteJob();
+            return;
+        end        
+        Error('Could not find palette to rename.');
     elseif (cmd == 'list') then
         for index,palette in ipairs(bindings.JobBindings.Palettes) do
             Message(string.format('[%u] %s%s', index, palette.Name, (bindings.ActivePaletteIndex == index) and ' - $HACTIVE$R' or ''));
@@ -314,7 +346,8 @@ function exposed:HandleCommand(args)
         for index,palette in ipairs(bindings.JobBindings.Palettes) do
             if (string.lower(palette.Name) == paletteName) then
                 if (bindings.ActivePaletteIndex ~= index) then
-                    bindings.ActivePalette = palette
+                    bindings.LastPaletteIndex = bindings.ActivePaletteIndex;
+                    bindings.ActivePalette = palette;
                     bindings.ActivePaletteIndex = index;
                     ApplyBindings();
                 end
@@ -324,6 +357,22 @@ function exposed:HandleCommand(args)
         end
         
         Error('Could not find palette to change to.');
+    elseif (cmd == 'last') then        
+        local last = bindings.LastPaletteIndex;
+        local newPalette = bindings.JobBindings.Palettes[last];
+        if (newPalette == bindings.ActivePalette) then
+            Error('You have not changed palettes since previous palette edit.  You cannot return to last palette.');
+            return;
+        elseif (newPalette == nil) then
+            Error('Your last palette doesn\'t exist.  You cannot return to it.');
+            return;
+        end
+
+        bindings.LastPaletteIndex = bindings.ActivePaletteIndex;
+        bindings.ActivePalette = newPalette;
+        bindings.ActivePaletteIndex = last;
+        ApplyBindings();
+        Message(string.format('Swapped to palette: $H%s$R', bindings.ActivePalette.Name));
     end
 end
 
