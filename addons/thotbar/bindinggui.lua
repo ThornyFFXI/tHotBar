@@ -819,7 +819,7 @@ function exposed:Show(hotkey, binding)
             end
             output = output .. tostring(item);
         end
-        state.MacroText = { output };
+        state.CostOverride = { output };
     end
 
     if (type(binding.Macro) == 'table') then
