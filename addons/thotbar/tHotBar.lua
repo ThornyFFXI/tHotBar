@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 addon.name      = 'tHotBar';
 addon.author    = 'Thorny';
-addon.version   = '2.10';
+addon.version   = '2.11';
 addon.desc      = 'Displays macros as visible and clickable elements.';
 addon.link      = 'https://ashitaxi.com/';
 
