@@ -11,11 +11,11 @@ local function IsControlPressed()
 end
 
 local modifiers = T{
-    ['%!'] = 'alt',
-    ['%^'] = 'ctrl',
-    ['%@'] = 'win',
-    ['%#'] = 'apps',
-    ['%+'] = 'shift'
+    ['!'] = 'alt',
+    ['^'] = 'ctrl',
+    ['@'] = 'win',
+    ['#'] = 'apps',
+    ['+'] = 'shift'
 };
 
 local function bind(hotkey, index)
@@ -28,16 +28,15 @@ local function bind(hotkey, index)
     };
 
     local working = hotkey;
-    for key,entry in pairs(modifiers) do
-        local newString = string.gsub(working, key, '');
-        if (newString ~= working) then
-            defaults[entry] = true;
-            working = newString;
-        end
+    local firstChar = string.sub(working, 1, 1);
+    while (modifiers[firstChar] ~= nil) do
+        defaults[modifiers[firstChar]] = true;
+        working = string.sub(working, 2);
+        firstChar = string.sub(working, 1, 1);
     end
 
     local kb = AshitaCore:GetInputManager():GetKeyboard();
-    kb:Bind(kb:S2D(string.sub(working, 1, 1)), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win,
+    kb:Bind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win,
     string.format('/tb activate %u', index));
 end
 
@@ -51,16 +50,15 @@ local function unbind(hotkey)
     };
 
     local working = hotkey;
-    for key,entry in pairs(modifiers) do
-        local newString = string.gsub(working, key, '');
-        if (newString ~= working) then
-            defaults[entry] = true;
-            working = newString;
-        end
+    local firstChar = string.sub(working, 1, 1);
+    while (modifiers[firstChar] ~= nil) do
+        defaults[modifiers[firstChar]] = true;
+        working = string.sub(working, 2);
+        firstChar = string.sub(working, 1, 1);
     end
 
     local kb = AshitaCore:GetInputManager():GetKeyboard();
-    kb:Unbind(kb:S2D(working[1]), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win);
+    kb:Unbind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win);
 end
 
 local Display = { Valid = false };
