@@ -41,12 +41,12 @@ local function GetInterfaceHidden()
 end
 
 local function GetChatExpanded()
-    local ptr = ashita.memory.read_uint32(pChatExpanded)
-    if ptr == 0 then
-        return false
+    local ptr = ashita.memory.read_uint32(pChatExpanded);
+    if (ptr == 0) then
+        return false;
     end
 
-    return ashita.memory.read_uint8(ptr + 0xF1) ~= 0
+    return (ashita.memory.read_uint8(ptr + 0xF1) ~= 0);
 end
 
 local function ShouldHide()
