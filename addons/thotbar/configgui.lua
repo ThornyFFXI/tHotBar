@@ -163,6 +163,8 @@ function exposed:Render()
                     imgui.ShowHelp('Hides UI while the game event system is active.');
                     CheckBox('While Map Open', 'HideWhileMap');
                     imgui.ShowHelp('Hides UI while the map is the topmost menu.');
+                    CheckBox('While Chat Expanded', 'HideWhileChat');
+                    imgui.ShowHelp('Hides UI while the chat window is expanded.');
                     imgui.TextColored(header, 'Binding Menu');
                     CheckBox('Default To <st>', 'DefaultSelectTarget');
                     imgui.ShowHelp('When enabled, new bindings that can target anything besides yourself will default to <st>.');
