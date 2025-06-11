@@ -86,7 +86,7 @@ function Display:Initialize(layout)
     local bindSetting = AshitaCore:GetInputManager():GetKeyboard():GetSilentBinds();
     AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(true);
     for _,data in ipairs(layout.Elements) do
-        local newElement = Element:New(data.DefaultMacro, layout);
+        local newElement = Element:New(data.DefaultMacro, layout, data.HotkeyLabel);
         newElement.OffsetX = data.OffsetX;
         newElement.OffsetY = data.OffsetY;
         newElement:SetPosition(position);
