@@ -68,6 +68,12 @@ local function ShouldHide()
         end
     end
 
+    if (gSettings.HideWhileMap) then
+        if (string.match(GetMenuName(), 'cnqframe')) then
+            return true;
+        end
+    end
+
     if (gSettings.HideWhileChat) then
         if (GetChatExpanded()) then
             return true;
