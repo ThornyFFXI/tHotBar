@@ -834,4 +834,132 @@ function exposed:Show(hotkey, binding)
     end
 end
 
+function exposed:TryDirectBind(hotkey, action)
+    local backup = state;
+
+    state = {
+        IsOpen = { false },
+        Hotkey = hotkey;
+        ActionResources = T{},
+        Combos = {
+            ['Scope'] = T{ 'Global', 'Job', 'Palette' },
+            ['Type'] = T{ 'Ability', 'Command', 'Empty', 'Item', 'Spell', 'Trust', 'Weaponskill' },
+            ['Action'] = T{ },
+        },
+        Components = {
+            Cost = true,
+            Cross = true,
+            Fade = true,
+            Recast = true,
+            Name = true,
+            Trigger = true,
+            SkillchainIcon = true,
+            SkillchainAnimation = true,
+            Hotkey = true,
+        },
+        Indices = {
+            ['Scope'] = 3,
+            ['Type'] = 1,
+        },
+        CostOverride = { '' },
+        MacroText = { '' },
+        MacroLabel = { '' },
+    };
+
+    local match = string.lower(action:gsub('%W', ''));
+    local resMgr = AshitaCore:GetResourceManager();
+    for i = 1,0x600 do
+        local res = resMgr:GetAbilityById(i);
+        if (res) and (player:KnowsAbility(res.Id)) and (string.lower(string.gsub(res.Name[1], '%W', '')) == match) then
+            state.ActionResources[1] = res;
+            if (i < 0x200) then
+                Update.Weaponskill(1);
+                state.Indices.Type = 7;
+            else
+                Update.Ability(1);
+                state.Indices.Type = 1;
+            end
+            state.Indices.Action = 1;
+            if AttemptBind() then
+                if (backup.Hotkey ~= state.Hotkey) then
+                    state = backup;
+                end
+                return true;
+            end
+        end
+    end
+    
+    local bags = T{0, 3};
+    for _,bag in ipairs(bags) do
+        for i = 1,80 do
+            local item = inventory:GetItemTable(bag, i);
+            if (item ~= nil) then
+                local res = resMgr:GetItemById(item.Id);
+                if (res ~= nil) and (bit.band(res.Flags, 0x200) == 0x200) and (string.lower(string.gsub(res.Name[1], '%W', '')) == match) then
+                    state.ActionResources[1] = res;
+                    Update.Item(1);
+                    state.Indices.Type = 4;
+                    state.Indices.Action = 1;
+                    if AttemptBind() then
+                        if (backup.Hotkey ~= state.Hotkey) then
+                            state = backup;
+                        end
+                        return true;
+                    end
+                end
+            end
+        end
+    end
+
+    local jobData = player:GetJobData();
+    local mainJob = jobData.MainJob;
+    local mainJobLevel = jobData.MainJobLevel;
+    local subJob = jobData.SubJob;
+    local subJobLevel = jobData.SubJobLevel;
+
+    for i = 1,0x400 do
+        local res = resMgr:GetSpellById(i);
+        if (res) and (player:HasSpell(res)) then
+            local levelRequired = res.LevelRequired;
+            --Maybe not best workaround, but trust are all usable at WAR1.
+            local hasSpell = false;
+            local jpMask = res.JobPointMask;
+            if (bit.band(bit.rshift(jpMask, mainJob), 1) == 1) then
+                if (mainJobLevel == 99) and (player:GetJobPointTotal(mainJob) >= levelRequired[mainJob + 1]) then
+                    hasSpell = true;
+                end
+            elseif (levelRequired[mainJob + 1] ~= -1) and (mainJobLevel >= levelRequired[mainJob + 1]) then
+                hasSpell = true;
+            end
+
+            if (bit.band(bit.rshift(jpMask, subJob), 1) == 0) then
+                if (levelRequired[subJob + 1] ~= -1) and (subJobLevel >= levelRequired[subJob + 1]) then
+                    hasSpell = true;
+                end
+            end
+
+            if (hasSpell) and (string.lower(string.gsub(res.Name[1], '%W', '')) == match) then
+                state.ActionResources[1] = res;
+                if (res.LevelRequired[2] ~= 1) then
+                    Update.Spell(1);
+                    state.Indices.Type = 5;
+                else
+                    Update.Trust(1);
+                    state.Indices.Type = 6;
+                end
+                state.Indices.Action = 1;
+                if AttemptBind() then
+                    if (backup.Hotkey ~= state.Hotkey) then
+                        state = backup;
+                    end
+                    return true;
+                end
+            end
+        end
+    end
+    
+    state = backup;
+    return false;
+end
+
 return exposed;
