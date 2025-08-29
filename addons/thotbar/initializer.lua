@@ -21,6 +21,7 @@ end
 local defaultSettings = T{
     Layout = '10x3',
     Scale = 1.0,
+    Resolutions = {},
     TriggerDuration = 0.25,
     ShowEmpty = true,
     ShowFrame = true,
@@ -59,9 +60,18 @@ local function UpdateSettings()
             end
             Message('Settings from a prior incompatible version detected.  Updating settings.')
         end
+        if gSettings.Resolutions == nil then
+            gSettings.Resolutions = {};
+        end
         gSettings.Version = tonumber(addon.version);
         settings.save();
     end
+    local resolutionKey = string.format("%ux%u", scaling.window.w, scaling.window.h);
+    if gSettings.Resolutions[resolutionKey] == nil then
+        gSettings.Resolutions[resolutionKey] = { Layout=gSettings.Layout, Scale=gSettings.Scale };
+        settings.save();
+    end
+    gActiveResolution = gSettings.Resolutions[resolutionKey];
 end
 UpdateSettings();
 
@@ -137,12 +147,12 @@ local Initializer = {};
 function Initializer:ApplyLayout()
     gDisplay:Destroy();
 
-    local layout = LoadFile_s(GetResourcePath('layouts/' .. gSettings.Layout));
+    local layout = LoadFile_s(GetResourcePath('layouts/' .. gActiveResolution.Layout));
     if layout then
-        PrepareLayout(layout, gSettings.Scale);
-        local position = gSettings.Position;
+        PrepareLayout(layout, gActiveResolution.Scale);
+        local position = gActiveResolution.Position;
         if position == nil then
-            gSettings.Position = GetDefaultPosition(layout);
+            gActiveResolution.Position = GetDefaultPosition(layout);
             settings.save();
         end
         gDisplay:Initialize(layout);

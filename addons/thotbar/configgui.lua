@@ -38,10 +38,10 @@ local function GetLayouts()
     end
 
     state.Layouts = layouts;
-    state.Scale = { gSettings.Scale };
+    state.Scale = { gActiveResolution.Scale };
     state.SelectedLayout = -1;
     for index,layout in ipairs(state.Layouts) do
-        if (gSettings.Layout == layout) then
+        if (gActiveResolution.Layout == layout) then
             state.SelectedLayout = index;
         end
     end
@@ -81,7 +81,7 @@ function exposed:Render()
                         imgui.ShowHelp('Allows you to drag the display.', true);
                         imgui.SameLine();
                         if (imgui.Button('Reset##tHotBarReset')) then
-                            gSettings.Position = GetDefaultPosition(gDisplay.Layout);
+                            gActiveResolution.Position = GetDefaultPosition(gDisplay.Layout);
                             gDisplay:UpdatePosition();
                             settings.save();
                         end
@@ -93,10 +93,10 @@ function exposed:Render()
                         if (layout == nil) then
                             Error('You must select a valid layout to apply it.');
                         else
-                            gSettings.Layout = layout;
-                            gSettings.Scale = state.Scale[1];
+                            gActiveResolution.Layout = layout;
+                            gActiveResolution.Scale = state.Scale[1];
                             gInitializer:ApplyLayout();
-                            gSettings.Position = GetDefaultPosition(gDisplay.Layout);
+                            gActiveResolution.Position = GetDefaultPosition(gDisplay.Layout);
                             gDisplay:UpdatePosition();
                             gBindings:Update();
                             settings.save();

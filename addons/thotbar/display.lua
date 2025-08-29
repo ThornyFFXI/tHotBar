@@ -81,7 +81,7 @@ function Display:Initialize(layout)
     self.Layout = layout;
     self.Elements = T{};
 
-    local position = gSettings.Position;
+    local position = gActiveResolution.Position;
 
     local bindSetting = AshitaCore:GetInputManager():GetKeyboard():GetSilentBinds();
     AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(true);
@@ -133,7 +133,7 @@ function Display:Render()
         return;
     end
 
-    local pos = gSettings.Position;
+    local pos = gActiveResolution.Position;
     local sprite = self.Sprite;
     sprite:Begin();
 
@@ -183,7 +183,7 @@ local dragPosition = { 0, 0 };
 local dragActive = false;
 function Display:DragTest(e)
     local handle = self.Layout.DragHandle;
-    local pos = gSettings.Position;
+    local pos = gActiveResolution.Position;
     local minX = pos[1] + handle.OffsetX;
     local maxX = minX + handle.Width;
     if (e.x < minX) or (e.x > maxX) then
@@ -201,7 +201,7 @@ function Display:HandleMouse(e)
     end
 
     if dragActive then
-        local pos = gSettings.Position;
+        local pos = gActiveResolution.Position;
         pos[1] = pos[1] + (e.x - dragPosition[1]);
         pos[2] = pos[2] + (e.y - dragPosition[2]);
         dragPosition[1] = e.x;
@@ -238,7 +238,7 @@ function Display:HitTest(x, y)
         return;
     end
 
-    local pos = gSettings.Position;
+    local pos = gActiveResolution.Position;
     if (x < pos[1]) or (y < pos[2]) then
         return false;
     end
@@ -273,7 +273,7 @@ function Display:UpdatePosition()
         return;
     end
     
-    local position = gSettings.Position;
+    local position = gActiveResolution.Position;
 
     for _,element in ipairs(self.Elements) do
         element:SetPosition(position);
