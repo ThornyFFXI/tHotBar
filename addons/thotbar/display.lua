@@ -36,7 +36,7 @@ local function bind(hotkey, index)
     end
 
     local kb = AshitaCore:GetInputManager():GetKeyboard();
-    kb:Bind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win,
+    kb:Bind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win, true, false,
     string.format('/tb activate %u', index));
 end
 
@@ -58,7 +58,7 @@ local function unbind(hotkey)
     end
 
     local kb = AshitaCore:GetInputManager():GetKeyboard();
-    kb:Unbind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win);
+    kb:Unbind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win, true, false);
 end
 
 local Display = { Valid = false };
