@@ -167,6 +167,8 @@ local layout = {
     
     --[[
         Table of elements.  Each entry must have 'DefaultMacro' (ashita binding format), OffsetX, and OffsetY.
+        If NoBind is set to true, no binding will be set (the element will still be clickable).
+        A unique DefaultMacro must still be provided to save binds.
         Easier to fill in OffsetX and OffsetY with iteration(see end of file).
     ]]--
     Elements = T{

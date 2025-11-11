@@ -69,7 +69,9 @@ function Display:Destroy()
         local bindSetting = AshitaCore:GetInputManager():GetKeyboard():GetSilentBinds();
         AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(true);
         for _,element in ipairs(self.Elements) do
-            unbind(element.State.Hotkey);
+            if (not element.NoBind) then
+                unbind(element.State.Hotkey);
+            end
         end
         AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(bindSetting);
     end
@@ -91,7 +93,11 @@ function Display:Initialize(layout)
         newElement.OffsetY = data.OffsetY;
         newElement:SetPosition(position);
         self.Elements:append(newElement);
-        bind(data.DefaultMacro, #self.Elements);
+        if (data.NoBind == true) then
+            newElement.NoBind = true;
+        else
+            bind(data.DefaultMacro, #self.Elements);
+        end
     end
     AshitaCore:GetInputManager():GetKeyboard():SetSilentBinds(bindSetting);
 
