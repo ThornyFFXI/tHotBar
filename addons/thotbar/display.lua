@@ -17,6 +17,39 @@ local modifiers = T{
     ['#'] = 'apps',
     ['+'] = 'shift'
 };
+local bindCompatibilityMode = nil -- "new" or "old"
+
+local function compatibleBind(kb, key, down, alt, apps, ctrl, shift, win, command)
+    if bindCompatibilityMode == nil then
+        local ok = pcall(function()
+            kb:Bind(key, down, alt, apps, ctrl, shift, win, command)
+        end)
+
+        bindCompatibilityMode = ok and "new" or "old"
+    end
+
+    if bindCompatibilityMode == "new" then
+        return kb:Bind(key, down, alt, apps, ctrl, shift, win, command)
+    else
+        return kb:Bind(key, down, alt, apps, ctrl, shift, win, true, false, command)
+    end
+end
+
+local function compatibleUnbind(kb, key, down, alt, apps, ctrl, shift, win)
+    if bindCompatibilityMode == nil then
+        local ok = pcall(function()
+            kb:Unbind(key, down, alt, apps, ctrl, shift, win)
+        end)
+
+        bindCompatibilityMode = ok and "new" or "old"
+    end
+
+    if bindCompatibilityMode == "new" then
+        return kb:Unbind(key, down, alt, apps, ctrl, shift, win)
+    else
+        return kb:Unbind(key, down, alt, apps, ctrl, shift, win, true, false)
+    end
+end
 
 local function bind(hotkey, index)
     local defaults = {
@@ -36,8 +69,7 @@ local function bind(hotkey, index)
     end
 
     local kb = AshitaCore:GetInputManager():GetKeyboard();
-    kb:Bind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win, true, false,
-    string.format('/tb activate %u', index));
+    compatibleBind(kb, kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win, string.format('/tb activate %u', index));
 end
 
 local function unbind(hotkey)
@@ -58,7 +90,7 @@ local function unbind(hotkey)
     end
 
     local kb = AshitaCore:GetInputManager():GetKeyboard();
-    kb:Unbind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win, true, false);
+    compatibleUnbind(kb, kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win);
 end
 
 local Display = { Valid = false };
