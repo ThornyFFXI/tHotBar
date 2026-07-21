@@ -10,6 +10,9 @@ Upon initial login, you can type **/tb** to open a configuration window and choo
 ## Binding Scope
 Most of the options in the binding menu are self-explanatory, but scope may need a little further explanation.  When building your active macro set, tHotBar will first look at your current palette and fill all squares it contains.  Then, if you have any empty squares, tHotBar will look at your job bindings and fill them as able.  Finally, it will look at your global bindings and fill as able.  So, if you bind something to global, that slot will show up on all jobs and palettes until you override it with a job-specific or palette-specific macro.  If you bind something to job, it will show up on all palettes for that job until you override it with a palette-specific macro.
 
+## Macro Concurrency
+By default, macros will execute alongside each other. If you want to cancel all pending macros, you can use the **/tb stop** command. If you prefer the ingame behavior of a new macro cancelling any pending macros, enable the Interrupt Mode checkbox on the Macros tab of the configuration.
+
 ## Palettes
 If you want multiple palettes of macros for a specific job, you can use typed commands to create and change them.  By default, every job contains an undeletable palette named Base.  Every time you change to a job, you will load onto the Base palette for that job.  These commands can be used from within tHotBar macros, so you can do things like the oldschool SMN layout where your avatar summon would also swap to a palette for that avatar.  If you prefer the standard ingame ctrl-alt down/up method of changing macro palettes, you can simply use binds to recreate it:
   * /bind ^up /tb palette previous

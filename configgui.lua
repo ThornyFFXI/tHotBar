@@ -143,11 +143,23 @@ function exposed:Render()
                     imgui.EndTabItem();
                 end
                 
-                if imgui.BeginTabItem('Behavior##tHotBarConfigBehaviorTab') then
+                if imgui.BeginTabItem('Macros##tHotBarConfigMacroTab') then
                     imgui.BeginGroup();
                     imgui.TextColored(header, 'Macro Elements');
                     CheckBox('Clickable', 'ClickToActivate');
                     imgui.ShowHelp('Makes macros activate when their icon is left clicked.');
+                    imgui.TextColored(header, "Macro Behavior")
+                    CheckBox('Interrupt Mode', 'MacroInterrupt');
+                    imgui.ShowHelp('When enabled, a new macro activation will cancel all pending macros like in the base game.');
+                    imgui.TextColored(header, 'Binding Menu');
+                    CheckBox('Default To <st>', 'DefaultSelectTarget');
+                    imgui.ShowHelp('When enabled, new bindings that can target anything besides yourself will default to <st>.');
+                    imgui.EndTabItem();
+                    imgui.EndGroup();
+                end
+
+                if imgui.BeginTabItem('Behavior##tHotBarConfigBehaviorTab') then
+                    imgui.BeginGroup();
                     imgui.TextColored(header, 'Trigger Duration');
                     local buff = { gSettings.TriggerDuration };
                     if imgui.SliderFloat('##TriggerDurationSlider', buff, 0.01, 1.5, '%.2f', ImGuiSliderFlags_AlwaysClamp) then
@@ -164,9 +176,6 @@ function exposed:Render()
                     imgui.ShowHelp('Hides UI while the map is the topmost menu.');
                     CheckBox('While Chat Expanded', 'HideWhileChat');
                     imgui.ShowHelp('Hides UI while the chat window is expanded.');
-                    imgui.TextColored(header, 'Binding Menu');
-                    CheckBox('Default To <st>', 'DefaultSelectTarget');
-                    imgui.ShowHelp('When enabled, new bindings that can target anything besides yourself will default to <st>.');
                     imgui.EndTabItem();
                     imgui.EndGroup();
                 end

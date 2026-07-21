@@ -1,6 +1,7 @@
 --Initialize Globals..
 require('helpers');
 gTextureCache    = require('texturecache');
+gMacro           = require('macro');
 gBindings        = require('bindings');
 gBindingGUI      = require('bindinggui');
 gConfigGUI       = require('configgui');
@@ -22,7 +23,6 @@ local defaultSettings = T{
     Layout = '10x3',
     Scale = 1.0,
     Resolutions = {},
-    TriggerDuration = 0.25,
     ShowEmpty = true,
     ShowFrame = true,
     ShowCost = true,
@@ -36,13 +36,17 @@ local defaultSettings = T{
     ShowTrigger = true,
     ShowPalette = true,
 
-    --Behavior tab..
+    --Macros Tab..
     ClickToActivate = true,
+    MacroInterrupt = false,
+    DefaultSelectTarget = false,
+
+    --Behavior tab..
+    TriggerDuration = 0.25,
     HideWhileZoning = true,
     HideWhileCutscene = true,
     HideWhileMap = true,
     HideWhileChat = true,
-    DefaultSelectTarget = false,
 };
 
 gSettings = settings.load(defaultSettings);
