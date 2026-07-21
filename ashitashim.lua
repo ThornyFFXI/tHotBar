@@ -1,3 +1,4 @@
+local imgui = require('imgui');
 local AshitaShim = { };
 
 function AshitaShim:KbBind(kb, key, down, alt, apps, ctrl, shift, win, command)
@@ -16,10 +17,15 @@ function AshitaShim:KbUnbind(kb, key, down, alt, apps, ctrl, shift, win)
     end
 end
 
-function AshitaShim:ImGUIBeginChild(imgui, childId, size, borders)
+function AshitaShim:ImGUIBeginChild(childId, size, borders)
     if ashita.interface_version < 4.3 then
-        return imgui.BeginChild(childId, size, false);
+        return imgui.BeginChild(childId, size, borders);
     else
+        if borders then
+            borders = ImGuiChildFlags_Borders;
+        else
+            borders = ImGuiChildFlags_None;
+        end
         return imgui.BeginChild(childId, size, borders);
     end
 end
