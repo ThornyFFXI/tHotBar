@@ -11,6 +11,8 @@ local wsmap = require('resources.wsmap');
 local Setup = {};
 local Update = {};
 
+local ashitaShim = require('ashitashim');
+
 local function CheckBox(display, field)
     local displayName = display;
     local fieldName = display;
@@ -543,7 +545,7 @@ function exposed:Render()
             imgui.BeginGroup();
             if imgui.BeginTabBar('##TabBar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton) then
                 if imgui.BeginTabItem('Binding##BindingTab', nil) then
-                    imgui.BeginChild('BindingChild', { 253, 355 }, ImGuiChildFlags_Borders);
+                    ashitaShim:ImGUIBeginChild(imgui, 'BindingChild', { 253, 355 } , ImGuiChildFlags_Borders);
                     imgui.TextColored(header, 'Hotkey');
                     imgui.Text(state.Hotkey);
                     ComboBox('Scope', 'Scope');
@@ -578,7 +580,7 @@ function exposed:Render()
                         width = layout.Icon.Width;
                         height = layout.Icon.Height;
                     end
-                    imgui.BeginChild('AppearanceChild', { 253, 235 + height }, ImGuiChildFlags_Borders);
+                    ashitaShim:ImGUIBeginChild(imgui, 'AppearanceChild', { 253, 235 + height } , ImGuiChildFlags_Borders);
                     imgui.TextColored(header, 'Image');
                     imgui.ShowHelp('While the image file and size are correct, rendering here is done with ImGui instead of GdiPlus and may vary slightly in appearance.');
                     local posY = imgui.GetCursorPosY();

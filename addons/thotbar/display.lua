@@ -2,6 +2,8 @@ local d3d8 = require('d3d8');
 local Element = require('element');
 local ffi = require('ffi');
 local gdi = require('gdifonts.include');
+local ashitaShim = require('ashitashim');
+
 ffi.cdef[[
     int16_t GetKeyState(int32_t vkey);
 ]]
@@ -36,8 +38,7 @@ local function bind(hotkey, index)
     end
 
     local kb = AshitaCore:GetInputManager():GetKeyboard();
-    kb:Bind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win, true, false,
-    string.format('/tb activate %u', index));
+    ashitaShim:KbBind(kb, kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win, string.format('/tb activate %u', index));
 end
 
 local function unbind(hotkey)
@@ -58,7 +59,7 @@ local function unbind(hotkey)
     end
 
     local kb = AshitaCore:GetInputManager():GetKeyboard();
-    kb:Unbind(kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win, true, false);
+    ashitaShim:KbUnbind(kb, kb:S2D(working), true, defaults.alt, defaults.apps, defaults.ctrl, defaults.shift, defaults.win);
 end
 
 local Display = { Valid = false };
